@@ -3,9 +3,15 @@
 #Pick which tables the database will have and what columns those tables will contain.
 #This will probably require deciding on your ìjoin gameî functionality.
 
+
 import urllib.request
 import json
 from random import randint
+
+
+# Do some HTML formatting at the very top!
+print( "Content-type:text/html\r\n\r\n")
+print('<html>')
 
 r = urllib.request.urlopen('https://api.myjson.com/bins/46ciq')
 html = r.read().decode('utf8') 
@@ -18,3 +24,6 @@ print("\nPossible answers:" + json_data["questions"][numquestions]['ans_list'])
 print("\nCorrect Answer is:" + json_data["questions"][numquestions]['correct_ans'] + "\n")
 
 
+########## DO NOT CHANGE ANYTHING BELOW THIS LINE ##########
+# Close HTML page
+print('</html>')
