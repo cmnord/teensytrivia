@@ -1,3 +1,4 @@
+#include <Adafruit_ST7735.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <math.h>
