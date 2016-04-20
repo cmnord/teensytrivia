@@ -8,7 +8,7 @@
 #include <ESP8266.h>
 
 Adafruit_SSD1306 display(4);
-LSM9DS1 imu;
+
 #define IOT 1
 #define IOT_UPDATE_INTERVAL 1000 //snce want to get every 1000 seconds and alternate posting/getting so need 1/2
 #define wifiSerial Serial1          // for ESP chip
@@ -40,7 +40,7 @@ void setup() {
   display.clearDisplay();
   display.setTextColor(WHITE);
   Serial.println("TRYING");
-    
+
   if (IOT) {
     wifi.begin();
     Serial.println("TRYING");
@@ -51,99 +51,81 @@ void setup() {
   Serial.println("CONNECTED");
   //get extra message if there is one and clear it out
   if ((IOT && wifi.hasResponse())) {
-        resp = wifi.getResponse();
-  }
-  imu.settings.device.commInterface = IMU_MODE_I2C;
-  imu.settings.device.mAddress = LSM9DS1_M;
-  imu.settings.device.agAddress = LSM9DS1_AG;
-  if (!imu.begin())
-  {
-    while (1){
-      Serial.println("Comm Failure with LSM9DS1");
-      delay(500);
-    }
+    resp = wifi.getResponse();
   }
 
-  display.clearDisplay();
-  display.setCursor(0,0);
+  display.setCursor(0, 0);
   randomSeed(analogRead(0));//seed random number
   display.setTextSize(2);
-  
-  pinMode(led,OUTPUT);
-  digitalWrite(led,LOW);
+
+  pinMode(led, OUTPUT);
+  digitalWrite(led, LOW);
 }
 
 void loop() {
-  
-  
-      if (millis() - tLastIotReq >= IOT_UPDATE_INTERVAL) {
-       
-        if (wifi.isConnected() && !wifi.isBusy()) { //Check if we can send request
-          
-          Serial.print("Sending request at t=");
-          Serial.println(millis());
-          
-          String domain = "iesc-s2.mit.edu";
-          int port = 80;
-          
-          String path = "/student_code/" + kerberos + "/dev1/sb1.py";
-          String getParams;
+  if (millis() - tLastIotReq >= IOT_UPDATE_INTERVAL) {
+    if (wifi.isConnected() && !wifi.isBusy()) { //Check if we can send request
+      Serial.print("Sending request at t=");
+      Serial.println(millis());
 
-         wifi.sendRequest(GET, domain, port, path, getParams);
-          /*if (lastRequest == "get") { 
-            getParams = "&recipient=jenny&source=teensey";
-        
-            wifi.sendRequest(GET, domain, port, path, getParams);
-            if(postOrBroadcast == "post"){
-              lastRequest = "post";
-              postOrBroadcast = "broadcast";
-            } else {
-              lastRequest = "broadcast";
-              postOrBroadcast = "post";//every other time post something
-            }
-         } else if(lastRequest == "post"){
-            Serial.println("HI IM POSTING");
-              getParams = "&sender=jenny&recipient=person1&message=Hello!workinkg";
-               lastRequest = "get";
-            wifi.sendRequest(POST, domain, port, path, getParams);
-          } else {
-             getParams = "&sender=jenny&recipient=BROADCAST&message=Hello!brodacasting";
-               lastRequest = "get";
-               wifi.sendRequest(POST, domain, port, path, getParams);
-          }*/
-          tLastIotReq = millis();
-              
-          
-         
-        } 
-       
-      }
-      
-      
-    if ((IOT && wifi.hasResponse())) {
-       Serial.println("HAVE IOT");
-        resp = wifi.getResponse();
-        tLastIotResp = millis();
-        updateDisplay();
-        
-        Serial.println(resp);
-        delay(1000);//can read for 5 seconds before reset
-       
-      }
-    
-    //}
+      String domain = "iesc-s2.mit.edu";
+      int port = 80;
+
+      String path = "/student_code/" + kerberos + "/dev1/sb1.py";
+      String getParams;
+
+      wifi.sendRequest(GET, domain, port, path, getParams);
+      /*if (lastRequest == "get") {
+        getParams = "&recipient=jenny&source=teensey";
+
+        wifi.sendRequest(GET, domain, port, path, getParams);
+        if(postOrBroadcast == "post"){
+          lastRequest = "post";
+          postOrBroadcast = "broadcast";
+        } else {
+          lastRequest = "broadcast";
+          postOrBroadcast = "post";//every other time post something
+        }
+        } else if(lastRequest == "post"){
+        Serial.println("HI IM POSTING");
+          getParams = "&sender=jenny&recipient=person1&message=Hello!workinkg";
+           lastRequest = "get";
+        wifi.sendRequest(POST, domain, port, path, getParams);
+        } else {
+         getParams = "&sender=jenny&recipient=BROADCAST&message=Hello!brodacasting";
+           lastRequest = "get";
+           wifi.sendRequest(POST, domain, port, path, getParams);
+        }*/
+      tLastIotReq = millis();
+
+
+
+    }
+
+  }
+
+
+  if ((IOT && wifi.hasResponse())) {
+    Serial.println("HAVE IOT");
+    resp = wifi.getResponse();
+    tLastIotResp = millis();
+    updateDisplay();
+
+    Serial.println(resp);
+    delay(1000);//can read for 5 seconds before reset
+
+  }
+
+  //}
   delay(50);
 }
 void updateDisplay()
 {
   Serial.println("HI IM DISPLAING");
-   display.clearDisplay();
-   display.setCursor(0, 0);
-   display.setTextSize(1);
-   display.println(resp);
-   display.println("HI");  
-   display.display();
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+  display.println(resp);
+  display.println("HI");
+  display.display();
 }
-
-
-
