@@ -15,7 +15,7 @@ Adafruit_SSD1306 display(4);
 #define LSM9DS1_M  0x1E // 
 #define LSM9DS1_AG  0x6B //
 
-String kerberos = "jennycxu";        // UPDATE WITH YOUR KERBEROS
+String kerberos = "cnord";        // UPDATE WITH YOUR KERBEROS
 String MAC = "";
 String resp = "";
 uint32_t tLastIotReq = 0;       // time of last send/pull
@@ -35,6 +35,8 @@ int b_button = 2; //black
 int c_button = 8; //yellow
 int d_button = 6; //blue
 int led = 13;
+
+bool isCorrect = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -120,7 +122,26 @@ void loop() {
   if ((IOT && wifi.hasResponse())) {
     Serial.println("HAVE IOT");
     resp = wifi.getResponse();
-    resp = resp.substring(8, resp.length() - 5);
+    /*
+      resp format:
+      <html><h1>008. What was the name of Cheerios when it was first marketed 50 years ago?</h1><ul>
+      <li><a>Cheerioats</a></li>
+      <li><b>Cheer Oats</b></li>
+      <li><c>Cheerie's</c></li>
+      <li><d>Cheerio-Loops</d></li>
+      </ul><h4>Cheerioats</h4>
+      </body></html>
+    */
+    //parse response
+    String question = resp.substring(resp.indexOf("<h1>")+9, resp.indexOf("</h1>"));
+    String ans_a = resp.substring(resp.indexOf("<A>")+3, resp.indexOf("</A>"));
+    String ans_b = resp.substring(resp.indexOf("<B>")+3, resp.indexOf("</B>"));
+    String ans_c = resp.substring(resp.indexOf("<C>")+3, resp.indexOf("</C>"));
+    String ans_d = resp.substring(resp.indexOf("<D>")+3, resp.indexOf("</D>"));
+    
+    String correct_ans = resp.substring(resp.indexOf("<h4>")+4, resp.indexOf("</h4>"));
+    resp = question + "\n";
+    resp += "A. "+ans_a+"\nB. "+ans_b+"\nC. "+ans_c+"\nD. "+ans_d;
     tLastIotResp = millis();
     updateDisplay();
     Serial.println(resp);
@@ -132,16 +153,32 @@ void loop() {
       delay(50);
     }
     if (!digitalRead(a_button)) {
-      Serial.println("A");
+      if(correct_ans.equals(ans_a)){
+        isCorrect = 1;
+        Serial.println("U R RIGHT YAYYY");
+      }
+      else{Serial.println("U WRONG");}
     }
     else if (!digitalRead(b_button)) {
-      Serial.println("B");
+      if(correct_ans.equals(ans_b)){
+        isCorrect = 1;
+        Serial.println("U R RIGHT YAYYY");
+      }
+      else{Serial.println("U WRONG");}
     }
     else if (!digitalRead(c_button)) {
-      Serial.println("C");
+      if(correct_ans.equals(ans_c)){
+        isCorrect = 1;
+        Serial.println("U R RIGHT YAYYY");
+      }
+      else{Serial.println("U WRONG");}
     }
     else if (!digitalRead(d_button)) {
-      Serial.println("D");
+      if(correct_ans.equals(ans_d)){
+        isCorrect = 1;
+        Serial.println("U R RIGHT YAYYY");
+      }
+      else{Serial.println("U WRONG");}
     }
   }
 }
@@ -152,6 +189,5 @@ void updateDisplay() {
   display.setCursor(0, 0);
   display.setTextSize(1);
   display.println(resp);
-  display.println("HI");
   display.display();
 }
