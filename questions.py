@@ -17,11 +17,14 @@ r = urllib.request.urlopen('https://api.myjson.com/bins/46ciq')
 html = r.read().decode('utf8') 
 #print (r.text)
 json_data = json.loads(html)
-numquestions = randint(0,(len(json_data["questions"]))) - 1
-print("\nQuestion " + (json_data["questions"][numquestions]['id']).strip())#question 1
-print(json_data["questions"][numquestions]['prompt'])
-print("\nPossible answers:" + json_data["questions"][numquestions]['ans_list'])
-print("\nCorrect Answer is:" + json_data["questions"][numquestions]['correct_ans'] + "\n")
+p = randint(0,(len(json_data["questions"]))) - 1 #random question index number
+q_id = (json_data["questions"][p]["id"]).strip()
+prompt = json_data["questions"][p]["prompt"]
+ans_list = json_data["questions"][p]["ans_list"]
+correct_ans = json_data["questions"][p]["correct_ans"]
+print("<b>" + q_id + ". " + prompt + "</b>")
+print("<ul><li>" + ans_list + "</li>")
+print("<li>" + correct_ans + "</li></ul>")
 
 
 ########## DO NOT CHANGE ANYTHING BELOW THIS LINE ##########
