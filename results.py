@@ -13,7 +13,7 @@ print('<title>Posts Trivia Responses to Database</title>')
 print('<body>')
 
 #Set up the server connection
-cnx = _mysql.connect(user='cnord_jennycxu', passwd='Pg8rdAyj',db='cnord_jennyxcu')
+cnx = _mysql.connect(user='cnord_jennycxu', passwd='Pg8rdAyj',db='cnord_jennycxu')
 
 
 method_type = get_method_type()
