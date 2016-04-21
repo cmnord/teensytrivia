@@ -97,11 +97,7 @@ void loop() {
            wifi.sendRequest(POST, domain, port, path, getParams);
         }*/
       tLastIotReq = millis();
-
-
-
     }
-
   }
 
 
