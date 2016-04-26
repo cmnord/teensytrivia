@@ -35,7 +35,7 @@ if method_type == 'POST':
     query = ("INSERT INTO response_db (gameID, roundNum, questionID, sender, deviceType, delta, isCorrect, currentScore) VALUES (" + str(gameID) + ", " + str(roundNum)  + ", " + str(questionID) + ", \'" + str(sender)  + "\', \'" + str(deviceType)  + "\', " + str(delta)  + ", " + str(isCorrect) + ", " + str(currentScore) + ")")
     cnx.query(query)
     cnx.commit()
-    print("<br>Inserted into database success!")
+    #print("<br>Inserted into database success!")
     cnx.close()#close so we don't go over max connections
 elif method_type == 'GET':
    # Now pull data from database and compute on it

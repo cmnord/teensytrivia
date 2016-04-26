@@ -64,12 +64,17 @@ elif method_type == "POST":
         deviceType = form.getvalue("deviceType")
         delta = form.getvalue("delta")
 
-        query = ("INSERT INTO response_db (gameID, roundNum, questionID, sender, deviceType, delta) VALUES (\'" + gameID + "\', \'" + roundNum  + "\', \'" + questionID + "\', \'" + sender  + "\', \'" + deviceType  + "\', \'" + delta  + "\')")
+        query = ("SELECT sender FROM response_db WHERE sender=" + sender) #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
         cnx.query(query)
-        cnx.commit()
-        #print("<br>Inserted into database success!")
-    else:
-        #print("<br>Not all post variables were received...")
+        result = cnx.store_result()
+        rows = result.fetch_row(maxrows=0,how=0) #what does this do?
+        if(len(rows) == 0):# if doesn't exist yet, insert into database
+            query = ("INSERT INTO response_db (gameID, roundNum, questionID, sender, deviceType, delta) VALUES (\'" + gameID + "\', \'" + roundNum  + "\', \'" + questionID + "\', \'" + sender  + "\', \'" + deviceType  + "\', \'" + delta  + "\')")
+            cnx.query(query)
+            cnx.commit()
+        else:
+            print("EXISTS")
+        
 
 ########## DO NOT CHANGE ANYTHING BELOW THIS LINE ##########
 print('</body>')
