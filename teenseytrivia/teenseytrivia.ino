@@ -15,7 +15,7 @@ Adafruit_SSD1306 display(4);
 #define LSM9DS1_M  0x1E // 
 #define LSM9DS1_AG  0x6B //
 
-String kerberos = "cnord";        // UPDATE WITH YOUR KERBEROS
+String kerberos = "jennycxu";        // UPDATE WITH YOUR KERBEROS
 String MAC = "";
 String resp = "";
 uint32_t tLastIotReq = 0;       // time of last send/pull
@@ -23,7 +23,6 @@ uint32_t tLastIotResp = 0;      // time of last response
 
 
 String lastRequest = "get";
-String postOrBroadcast = "post";
 #define SSID "6S08C"       // network SSID and password
 #define PASSWORD "6S086S08"
 
@@ -91,31 +90,24 @@ void loop() {
       String domain = "iesc-s2.mit.edu";
       int port = 80;
 
-      String path = "/student_code/" + kerberos + "/dev1/sb1.py";
+      String path = "/student_code/cnord/dev1/sb1.py";
+      String pathPost = "/student_code/" + kerberos + "/dev1/sb3.py";
       String getParams;
 
-      wifi.sendRequest(GET, domain, port, path, getParams);
-      /*if (lastRequest == "get") {
+      if (lastRequest == "get") {
         getParams = "&recipient=jenny&source=teensey";
 
         wifi.sendRequest(GET, domain, port, path, getParams);
-        if(postOrBroadcast == "post"){
-          lastRequest = "post";
-          postOrBroadcast = "broadcast";
-        } else {
-          lastRequest = "broadcast";
-          postOrBroadcast = "post";//every other time post something
-        }
-        } else if(lastRequest == "post"){
-        Serial.println("HI IM POSTING");
-          getParams = "&sender=jenny&recipient=person1&message=Hello!workinkg";
+        
+          //lastRequest = "post";
+        
+      } else if(lastRequest == "post"){//if it is set to post that means they selected an answer
+         Serial.println("HI IM POSTING:" + isCorrect);
+           getParams = "&sender="+kerberos+ "&questionID=1&deviceType=teensey&id=0&gameID=0&roundNum=1&delta=0.1&isCorrect=" + isCorrect + "&currentScore=10";
            lastRequest = "get";
-        wifi.sendRequest(POST, domain, port, path, getParams);
-        } else {
-         getParams = "&sender=jenny&recipient=BROADCAST&message=Hello!brodacasting";
-           lastRequest = "get";
-           wifi.sendRequest(POST, domain, port, path, getParams);
-        }*/
+           wifi.sendRequest(POST, domain, port, pathPost, getParams);
+           isCorrect = -1;//if it has an answer needed to be pushed, push it and then restart
+      } 
       tLastIotReq = millis();
     }
   }
@@ -155,30 +147,29 @@ void loop() {
     if (!digitalRead(a_button)) {
       if(correct_ans.equals(ans_a)){
         isCorrect = 1;
-        Serial.println("U R RIGHT YAYYY");
-      }
-      else{Serial.println("U WRONG");}
+      } else { isCorrect = 0;}
     }
     else if (!digitalRead(b_button)) {
       if(correct_ans.equals(ans_b)){
         isCorrect = 1;
-        Serial.println("U R RIGHT YAYYY");
-      }
-      else{Serial.println("U WRONG");}
+      } else { isCorrect = 0;}
     }
     else if (!digitalRead(c_button)) {
       if(correct_ans.equals(ans_c)){
         isCorrect = 1;
-        Serial.println("U R RIGHT YAYYY");
-      }
-      else{Serial.println("U WRONG");}
+      } else { isCorrect = 0;}
     }
     else if (!digitalRead(d_button)) {
       if(correct_ans.equals(ans_d)){
         isCorrect = 1;
-        Serial.println("U R RIGHT YAYYY");
-      }
-      else{Serial.println("U WRONG");}
+      } else { isCorrect = 0;}
+    }
+    if(isCorrect == 1){
+      lastRequest = "post";//to post the answer on next wifi available
+      Serial.println("U R RIGHT");
+    } else {
+      lastRequest = "post";
+      Serial.println("UR WRONG");
     }
   }
 }
