@@ -21,6 +21,9 @@ String resp = "";
 uint32_t tLastIotReq = 0;       // time of last send/pull
 uint32_t tLastIotResp = 0;      // time of last response
 
+uint32_t tQuestionStart = 0; //used for determining delta
+uint32_t tQuestionEnd = 0; //used for determining delta
+float delta = 0; //time it takes for player to answer
 
 String lastRequest = "get";
 #define SSID "6S08C"       // network SSID and password
@@ -96,18 +99,15 @@ void loop() {
 
       if (lastRequest == "get") {
         getParams = "&recipient=jenny&source=teensey";
-
         wifi.sendRequest(GET, domain, port, path, getParams);
-        
-          //lastRequest = "post";
-        
-      } else if(lastRequest == "post"){//if it is set to post that means they selected an answer
-         Serial.println("HI IM POSTING:" + isCorrect);
-           getParams = "&sender="+kerberos+ "&questionID=1&deviceType=teensey&id=0&gameID=0&roundNum=1&delta=0.1&isCorrect=" + isCorrect + "&currentScore=10";
-           lastRequest = "get";
-           wifi.sendRequest(POST, domain, port, pathPost, getParams);
-           isCorrect = -1;//if it has an answer needed to be pushed, push it and then restart
-      } 
+        //lastRequest = "post";
+      } else if (lastRequest == "post") { //if it is set to post that means they selected an answer
+        Serial.println("HI IM POSTING:");
+        getParams = "&sender=" + kerberos + "&questionID=1&deviceType=teensey&id=0&gameID=0&roundNum=1&delta="+delta+"&isCorrect=" + isCorrect + "&currentScore=10";
+        lastRequest = "get";
+        wifi.sendRequest(POST, domain, port, pathPost, getParams);
+        isCorrect = -1;//if it has an answer needed to be pushed, push it and then restart
+      }
       tLastIotReq = millis();
     }
   }
@@ -124,19 +124,12 @@ void loop() {
       </ul><h4>Cheerioats</h4>
       </body></html>
     */
-    //parse response
-    String question = resp.substring(resp.indexOf("<h1>")+9, resp.indexOf("</h1>"));
-    String ans_a = resp.substring(resp.indexOf("<A>")+3, resp.indexOf("</A>"));
-    String ans_b = resp.substring(resp.indexOf("<B>")+3, resp.indexOf("</B>"));
-    String ans_c = resp.substring(resp.indexOf("<C>")+3, resp.indexOf("</C>"));
-    String ans_d = resp.substring(resp.indexOf("<D>")+3, resp.indexOf("</D>"));
+    int correct_pin = parseResponse(resp);
+    //resp is now nicely formatted
     
-    String correct_ans = resp.substring(resp.indexOf("<h4>")+4, resp.indexOf("</h4>"));
-    resp = question + "\n";
-    resp += "A. "+ans_a+"\nB. "+ans_b+"\nC. "+ans_c+"\nD. "+ans_d;
     tLastIotResp = millis();
     updateDisplay();
-    Serial.println(resp);
+    tQuestionStart = millis();
     while (digitalRead(a_button) &&
            digitalRead(b_button) &&
            digitalRead(c_button) &&
@@ -144,33 +137,21 @@ void loop() {
       //delay until you press a button again
       delay(50);
     }
-    if (!digitalRead(a_button)) {
-      if(correct_ans.equals(ans_a)){
-        isCorrect = 1;
-      } else { isCorrect = 0;}
-    }
-    else if (!digitalRead(b_button)) {
-      if(correct_ans.equals(ans_b)){
-        isCorrect = 1;
-      } else { isCorrect = 0;}
-    }
-    else if (!digitalRead(c_button)) {
-      if(correct_ans.equals(ans_c)){
-        isCorrect = 1;
-      } else { isCorrect = 0;}
-    }
-    else if (!digitalRead(d_button)) {
-      if(correct_ans.equals(ans_d)){
-        isCorrect = 1;
-      } else { isCorrect = 0;}
-    }
-    if(isCorrect == 1){
+    isCorrect = 0;
+    if (!digitalRead(correct_pin)) {
+      isCorrect = 1;
       lastRequest = "post";//to post the answer on next wifi available
       Serial.println("U R RIGHT");
-    } else {
+    }
+    else {
       lastRequest = "post";
       Serial.println("UR WRONG");
     }
+    tQuestionEnd = millis();
+    delta = (tQuestionEnd - tQuestionStart) / 1000.;
+    Serial.print("----------- Delta= ");
+    Serial.print(delta);
+    Serial.println("sec ---------------");
   }
 }
 
@@ -181,4 +162,24 @@ void updateDisplay() {
   display.setTextSize(1);
   display.println(resp);
   display.display();
+}
+
+int parseResponse(String response) {
+  //updates resp to be nicely formatted text for teensy
+  //returns the int value of the button w/ correct answer
+  //should this be two different methods?
+  String question = response.substring(response.indexOf("<h1>") + 9, response.indexOf("</h1>"));
+  String ans_a = response.substring(response.indexOf("<A>") + 3, response.indexOf("</A>"));
+  String ans_b = response.substring(response.indexOf("<B>") + 3, response.indexOf("</B>"));
+  String ans_c = response.substring(response.indexOf("<C>") + 3, response.indexOf("</C>"));
+  String ans_d = response.substring(response.indexOf("<D>") + 3, response.indexOf("</D>"));
+
+  String correct_ans = response.substring(response.indexOf("<h4>") + 4, response.indexOf("</h4>"));
+  int ans_pin = a_button;
+  if(correct_ans.equals(ans_b)){ans_pin = b_button;}
+  else if(correct_ans.equals(ans_c)){ans_pin = c_button;}
+  else if(correct_ans.equals(ans_d)){ans_pin = d_button;}
+  resp = question + "\n";
+  resp += "A. " + ans_a + "\nB. " + ans_b + "\nC. " + ans_c + "\nD. " + ans_d;
+  return ans_pin;
 }
