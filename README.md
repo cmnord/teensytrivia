@@ -15,6 +15,7 @@ Claire Nord and Jenny Xu
 -Test advancing round = when all players have an answer in database 
 -Display leaderboard on teensey screen then a couple seconds later shows new quesion
 -End game support
+-in answers.py when len(rows) == num players can calclate winner take the top entry in database as winner and add to their currentscore, and then teenseytrivia.ino GET's currentScore and updates local score and then all teensey's pull new question'
 
 ##Milestones
 - April 28: Multiplayer support: how to sync up, join a game together
