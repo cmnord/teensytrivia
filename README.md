@@ -10,6 +10,7 @@ Claire Nord and Jenny Xu
 - Figure out how rounds are going to look in the database: 
 - 1. Delete all entries in the database after each round and check for when there are entries = # players
 - 2. Push one entry for each player and update each person's row until you get everyone's roundID = currentRound'
+-Plus points for fastest + set points for correct answer
 
 ##Milestones
 - April 28: Multiplayer support: how to sync up, join a game together
