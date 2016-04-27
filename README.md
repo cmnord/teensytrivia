@@ -11,6 +11,10 @@ Claire Nord and Jenny Xu
 - 1. Delete all entries in the database after each round and check for when there are entries = # players
 - 2. Push one entry for each player and update each person's row until you get everyone's roundID = currentRound'
 -Plus points for fastest + set points for correct answer
+-Figure out how to get each player in + insert initial database entry
+-Test advancing round = when all players have an answer in database 
+-Display leaderboard on teensey screen then a couple seconds later shows new quesion
+-End game support
 
 ##Milestones
 - April 28: Multiplayer support: how to sync up, join a game together
