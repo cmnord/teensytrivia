@@ -24,9 +24,9 @@ uint32_t tLastIotResp = 0;      // time of last response
 uint32_t tQuestionStart = 0; //used for determining delta
 uint32_t tQuestionEnd = 0; //used for determining delta
 float delta = 0; //time it takes for player to answer
+int id = 0; //question ID, different for each question
 
-String lastRequest = "get";
-#define SSID "6S08C"       // network SSID and password
+#define SSID "6S08B"       // network SSID and password
 #define PASSWORD "6S086S08"
 
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
@@ -85,100 +85,155 @@ void setup() {
 }
 
 void loop() {
-  if (millis() - tLastIotReq >= IOT_UPDATE_INTERVAL) {
-    if (wifi.isConnected() && !wifi.isBusy()) { //Check if we can send request
-      Serial.print("Sending request at t=");
-      Serial.println(millis());
-
-      String domain = "iesc-s2.mit.edu";
-      int port = 80;
-
-      String path = "/student_code/cnord/dev1/sb1.py";
-      String pathPost = "/student_code/" + kerberos + "/dev1/sb3.py";
-      String getParams;
-
-      if (lastRequest == "get") {
-        getParams = "&recipient=jenny&source=teensey";
-        wifi.sendRequest(GET, domain, port, path, getParams);
-        //lastRequest = "post";
-      } else if (lastRequest == "post") { //if it is set to post that means they selected an answer
-        Serial.println("HI IM POSTING:");
-        getParams = "&sender=" + kerberos + "&questionID=1&deviceType=teensey&id=0&gameID=0&roundNum=1&delta="+delta+"&isCorrect=" + isCorrect + "&currentScore=10";
-        lastRequest = "get";
-        wifi.sendRequest(POST, domain, port, pathPost, getParams);
-        isCorrect = -1;//if it has an answer needed to be pushed, push it and then restart
-      }
-      tLastIotReq = millis();
-    }
+  Serial.println("-----begin loop-----------------");
+  wifi.clearRequest();
+  //if (millis() - tLastIotReq >= IOT_UPDATE_INTERVAL) {
+    resp = getQuestion();
+  //  tLastIotReq = millis();
+  //}
+  if (resp.equals("")){
+    Serial.println("Response is empty :((((");
   }
-  if ((IOT && wifi.hasResponse())) {
-    Serial.println("HAVE IOT");
-    resp = wifi.getResponse();
-    /*
-      resp format:
-      <html><h1>008. What was the name of Cheerios when it was first marketed 50 years ago?</h1><ul>
-      <li><a>Cheerioats</a></li>
-      <li><b>Cheer Oats</b></li>
-      <li><c>Cheerie's</c></li>
-      <li><d>Cheerio-Loops</d></li>
-      </ul><h4>Cheerioats</h4>
-      </body></html>
-    */
-    int correct_pin = parseResponse(resp);
-    //resp is now nicely formatted
-    
-    tLastIotResp = millis();
-    updateDisplay();
-    tQuestionStart = millis();
-    while (digitalRead(a_button) &&
-           digitalRead(b_button) &&
-           digitalRead(c_button) &&
-           digitalRead(d_button)) {
-      //delay until you press a button again
-      delay(50);
-    }
-    isCorrect = 0;
-    if (!digitalRead(correct_pin)) {
-      isCorrect = 1;
-      lastRequest = "post";//to post the answer on next wifi available
-      Serial.println("U R RIGHT");
-    }
-    else {
-      lastRequest = "post";
-      Serial.println("UR WRONG");
-    }
-    tQuestionEnd = millis();
-    delta = (tQuestionEnd - tQuestionStart) / 1000.;
-    Serial.print("----------- Delta= ");
-    Serial.print(delta);
-    Serial.println("sec ---------------");
+  int correct_pin = parseResponse(resp);
+  //resp is now nicely formatted
+  updateDisplay(resp);
+  tQuestionStart = millis();
+  while (digitalRead(a_button) && digitalRead(b_button) && digitalRead(c_button) && digitalRead(d_button)) {
+    //delay until you press a button again
+    delay(50); //this means all deltas will be in 50-ms increments (adjust the delay to make shorter delta)
   }
+  isCorrect = 0;
+  if (!digitalRead(correct_pin)) {
+    isCorrect = 1;
+    Serial.println("Correct answer!");
+    updateDisplay("Correct answer!");
+  }
+  else {
+    Serial.println("Sorry, wrong answer\n:(");
+    updateDisplay("Sorry, wrong answer\n:(");
+  }
+  tQuestionEnd = millis();
+  delta = (tQuestionEnd - tQuestionStart) / 1000.;
+  postData(id, 0, 1, delta, isCorrect, 10);
+  //String lead = getLeaderboard();
+  //updateDisplay(lead);
+  //delay(2000); //show leaderboard for 2 seconds
 }
 
-void updateDisplay() {
-  Serial.println("HI IM DISPLAING");
+void updateDisplay(String text) {
+  Serial.println("HI IM DISPLAYING");
   display.clearDisplay();
   display.setCursor(0, 0);
   display.setTextSize(1);
-  display.println(resp);
+  display.println(text);
   display.display();
+}
+
+void menu() {
+  String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\nA. Start Game\nB. Leaderboard";
+  while (digitalRead(a_button) && digitalRead(b_button)) {
+    //delay until you press A or B
+    delay(50);
+  }
+  if (!digitalRead(b_button)) {
+    //B button selected, so display leaderboard
+    //display leaderboard by GET from results.py
+  }
+  //if they select the A button, the method will just end and loop will begin, which is the game
+}
+
+String getQuestion() {
+  //gets a question from sb1.py.
+  String domain = "iesc-s2.mit.edu";
+  int port = 80;
+  String response = "";
+  if (wifi.isConnected()) { //&& !wifi.isBusy()
+    Serial.print("Getting question at t=");
+    Serial.println(millis());
+    String getPath = "/student_code/" + kerberos + "/dev1/sb1.py";
+    String getParams = "recipient=" + kerberos + "&source=teensey";
+    wifi.sendRequest(GET, domain, port, getPath, getParams);
+    unsigned long t = millis();
+    while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
+    if (wifi.hasResponse()) {
+      response = wifi.getResponse();
+      Serial.print("Got response at t=");
+      Serial.println(millis());
+      Serial.println(response);
+    } else {
+      Serial.println("No timely response");
+    }
+  }
+  else{
+    Serial.println("either wifi is disconnected or wifi is busy");
+  }
+  return response;
+}
+
+void postData(String questionID, int gameID, int roundNum, float deltaT, int correct, int score) {
+  //posts the user's answer, etc. to sb3.py.
+  String domain = "iesc-s2.mit.edu";
+  int port = 80;
+  if (wifi.isConnected() && !wifi.isBusy()) {
+    Serial.print("Posting data at t=");
+    Serial.println(millis());
+    String postPath = "/student_code/" + kerberos + "/dev1/sb3.py";
+    //TODO: complete these get params
+    String postParams = "sender=" + kerberos +
+                        "&questionID=" + questionID +
+                        "&deviceType=teensey&gameID=" + String(gameID) +
+                        "&roundNum=" + String(roundNum) +
+                        "&delta=" + String(deltaT, 3) +
+                        "&isCorrect=" + correct +
+                        "&currentScore=" + String(score);  //deltaT is set to 3 decimal places
+    wifi.sendRequest(POST, domain, port, postPath, postParams);
+    String junk = wifi.getResponse();
+    Serial.println("This data was posted yay");
+    isCorrect = -1;//if it has an answer needed to be pushed, push it and then restart
+    unsigned long t = millis();
+    while (wifi.isBusy() && millis() - t < 10000); //wait for response
+  }
 }
 
 int parseResponse(String response) {
   //updates resp to be nicely formatted text for teensy
   //returns the int value of the button w/ correct answer
   //should this be two different methods?
-  String question = response.substring(response.indexOf("<h1>") + 9, response.indexOf("</h1>"));
-  String ans_a = response.substring(response.indexOf("<A>") + 3, response.indexOf("</A>"));
-  String ans_b = response.substring(response.indexOf("<B>") + 3, response.indexOf("</B>"));
-  String ans_c = response.substring(response.indexOf("<C>") + 3, response.indexOf("</C>"));
-  String ans_d = response.substring(response.indexOf("<D>") + 3, response.indexOf("</D>"));
-
-  String correct_ans = response.substring(response.indexOf("<h4>") + 4, response.indexOf("</h4>"));
+  /*
+    resp format:
+    <html><h1>008. What was the name of Cheerios when it was first marketed 50 years ago?</h1><ul>
+    <li><a>Cheerioats</a></li>
+    <li><b>Cheer Oats</b></li>
+    <li><c>Cheerie's</c></li>
+    <li><d>Cheerio-Loops</d></li>
+    </ul><h4>Cheerioats</h4>
+    </body></html>
+  */
+  String question = "";
+  String ans_a = "";
+  String ans_b = "";
+  String ans_c = "";
+  String ans_d = "";
+  String correct_ans = "";
+  
+  id = response.substring(response.indexOf("<h1>") + 4, response.indexOf("<h1>") + 7).toInt();
+  question = response.substring(response.indexOf("<h1>") + 9, response.indexOf("</h1>"));
+  ans_a = response.substring(response.indexOf("<A>") + 3, response.indexOf("</A>"));
+  ans_b = response.substring(response.indexOf("<B>") + 3, response.indexOf("</B>"));
+  ans_c = response.substring(response.indexOf("<C>") + 3, response.indexOf("</C>"));
+  ans_d = response.substring(response.indexOf("<D>") + 3, response.indexOf("</D>"));
+  correct_ans = response.substring(response.indexOf("<h4>") + 4, response.indexOf("</h4>"));
+  
   int ans_pin = a_button;
-  if(correct_ans.equals(ans_b)){ans_pin = b_button;}
-  else if(correct_ans.equals(ans_c)){ans_pin = c_button;}
-  else if(correct_ans.equals(ans_d)){ans_pin = d_button;}
+  if (correct_ans.equals(ans_b)) {
+    ans_pin = b_button;
+  }
+  else if (correct_ans.equals(ans_c)) {
+    ans_pin = c_button;
+  }
+  else if (correct_ans.equals(ans_d)) {
+    ans_pin = d_button;
+  }
   resp = question + "\n";
   resp += "A. " + ans_a + "\nB. " + ans_b + "\nC. " + ans_c + "\nD. " + ans_d;
   return ans_pin;
