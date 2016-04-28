@@ -44,11 +44,11 @@ if method_type == 'POST':
 #    questionID = 0
 #    roundNum = 1
     
-    insertIntoDB(gameID,roundNum,questionID,sender,deviceType,delta,isCorrect,currentScore)
+    insertIntoDB(gameID,roundNum,questionID,str(sender),deviceType,delta,isCorrect,currentScore)
 elif method_type == 'GET':
     # Now pull data from database and compute on it
-    print('<h1>Current Question Results</h1>')
     
+    print('<h1>Current Question Results</h1>')
     query = ("SELECT * FROM response_db WHERE isCorrect=1 ORDER BY delta") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
     cnx.query(query)
     result = cnx.store_result()
