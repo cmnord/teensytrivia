@@ -12,8 +12,6 @@ Adafruit_SSD1306 display(4);
 #define IOT 1
 #define IOT_UPDATE_INTERVAL 1000 //snce want to get every 1000 seconds and alternate posting/getting so need 1/2
 #define wifiSerial Serial1          // for ESP chip
-#define LSM9DS1_M  0x1E // 
-#define LSM9DS1_AG  0x6B //
 
 String kerberos = "jennycxu";        // UPDATE WITH YOUR KERBEROS
 String MAC = "";
@@ -25,9 +23,13 @@ uint32_t tQuestionStart = 0; //used for determining delta
 uint32_t tQuestionEnd = 0; //used for determining delta
 float delta = 0; //time it takes for player to answer
 int id = 0; //question ID, different for each question
+bool isCorrect = 0;
+int currentScore = 0; //+10 for every correct answer
+int roundNum = 0; //this gets incremented every loop
+int gameID = 0; //this gets changed later
 
-#define SSID "6S08B"       // network SSID and password
-#define PASSWORD "6S086S08"
+#define SSID "Grace's iPhone" // network SSID and password
+#define PASSWORD "gracemelcher"
 
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
 
@@ -36,23 +38,18 @@ int a_button = 4; //black
 int b_button = 2; //black
 int c_button = 8; //yellow
 int d_button = 6; //blue
-int led = 13;
-
-bool isCorrect = 0;
 
 void setup() {
   Serial.begin(115200);
   //button setup
   pinMode(a_button, INPUT); //set pin to "listen" to signals
-  pinMode(b_button, INPUT); //set pin to "listen" to signals
-  pinMode(c_button, INPUT); //set pin to "listen" to signals
-  pinMode(d_button, INPUT); //set pin to "listen" to signals
-  pinMode(led, OUTPUT); //set LED to be output
+  pinMode(b_button, INPUT);
+  pinMode(c_button, INPUT);
+  pinMode(d_button, INPUT);
   pinMode(a_button, INPUT_PULLUP); //set input to be normally "HI"
-  pinMode(b_button, INPUT_PULLUP); //""
-  pinMode(c_button, INPUT_PULLUP); //""
-  pinMode(d_button, INPUT_PULLUP); //""
-  digitalWrite(led, LOW); //Set LED to be off at beginning
+  pinMode(b_button, INPUT_PULLUP);
+  pinMode(c_button, INPUT_PULLUP);
+  pinMode(d_button, INPUT_PULLUP);
 
   //display setup
   delay(2500);
@@ -62,10 +59,9 @@ void setup() {
   display.clearDisplay();
   display.setTextColor(WHITE);
   Serial.println("TRYING");
-
   if (IOT) {
     wifi.begin();
-    Serial.println("TRYING");
+    Serial.print("WIFI CONNECTING.....");
     wifi.connectWifi(SSID, PASSWORD);
     while (!wifi.isConnected()); //wait for connection
     MAC = wifi.getMAC();
@@ -79,14 +75,13 @@ void setup() {
   display.setCursor(0, 0);
   randomSeed(analogRead(0));//seed random number
   display.setTextSize(2);
-
-  pinMode(led, OUTPUT);
-  digitalWrite(led, LOW);
+  menu();
 }
 
 void loop() {
-  Serial.println("-----begin loop-----------------");
+  Serial.println("----------begin loop-----------------");
   wifi.clearRequest();
+  roundNum += 1;
   //if (millis() - tLastIotReq >= IOT_UPDATE_INTERVAL) {
     resp = getQuestion();
   //  tLastIotReq = millis();
@@ -105,19 +100,20 @@ void loop() {
   isCorrect = 0;
   if (!digitalRead(correct_pin)) {
     isCorrect = 1;
+    currentScore += 10; //10 points per correct question
     Serial.println("Correct answer!");
-    updateDisplay("Correct answer!");
+    updateDisplay("Correct answer!\nPosting to DB...");
   }
   else {
     Serial.println("Sorry, wrong answer\n:(");
-    updateDisplay("Sorry, wrong answer\n:(");
+    updateDisplay("Sorry, wrong answer\n:(\nPosting to DB...");
   }
   tQuestionEnd = millis();
   delta = (tQuestionEnd - tQuestionStart) / 1000.;
-  postData(id, 0, 1, delta, isCorrect, 10);
-  //String lead = getLeaderboard();
-  //updateDisplay(lead);
-  //delay(2000); //show leaderboard for 2 seconds
+  postData(id, gameID, roundNum, delta, isCorrect, currentScore);
+  String lead = getLeaderboard();
+  updateDisplay(lead);
+  delay(2000); //show leaderboard for 2 seconds
 }
 
 void updateDisplay(String text) {
@@ -131,13 +127,16 @@ void updateDisplay(String text) {
 
 void menu() {
   String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\nA. Start Game\nB. Leaderboard";
+  updateDisplay(menuText);
   while (digitalRead(a_button) && digitalRead(b_button)) {
     //delay until you press A or B
     delay(50);
   }
   if (!digitalRead(b_button)) {
-    //B button selected, so display leaderboard
-    //display leaderboard by GET from results.py
+    String lead = getLeaderboard();
+    updateDisplay(lead);
+    delay(2000);
+    menu();
   }
   //if they select the A button, the method will just end and loop will begin, which is the game
 }
@@ -175,11 +174,11 @@ String getLeaderboard() {
   String domain = "iesc-s2.mit.edu";
   int port = 80;
   String response = "";
-  if (wifi.isConnected()) { //&& !wifi.isBusy()
+  if (wifi.isConnected() && !wifi.isBusy()) {
     Serial.print("Getting leaderboard at t=");
     Serial.println(millis());
-    String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
-    String getParams = "recipient=" + kerberos + "&source=teensey";
+    String getPath = "/student_code/cnord/dev1/sb2.py";
+    String getParams = "recipient=" + kerberos + "&deviceType=teensy";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
     unsigned long t = millis();
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
@@ -188,6 +187,7 @@ String getLeaderboard() {
       Serial.print("Got response at t=");
       Serial.println(millis());
       Serial.println(response);
+      response = response.substring(response.indexOf("<html>")+6,response.indexOf("</html>"));
     } else {
       Serial.println("No timely response");
     }

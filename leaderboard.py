@@ -38,6 +38,7 @@ if method_type == "GET":
         cnx.query(query)
         result = cnx.store_result()
         rows = result.fetch_row(maxrows=0,how=0) #what does this do?
+        
         if(form.getvalue('deviceType') == 'teensy' or form.getvalue('deviceType') == 'teensey'):
             print('LEADERBOARD\n')
             playersCount = 0
