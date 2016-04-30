@@ -170,6 +170,34 @@ String getQuestion() {
   return response;
 }
 
+String getLeaderboard() {
+  //gets the leaderboard from sb2.py.
+  String domain = "iesc-s2.mit.edu";
+  int port = 80;
+  String response = "";
+  if (wifi.isConnected()) { //&& !wifi.isBusy()
+    Serial.print("Getting leaderboard at t=");
+    Serial.println(millis());
+    String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
+    String getParams = "recipient=" + kerberos + "&source=teensey";
+    wifi.sendRequest(GET, domain, port, getPath, getParams);
+    unsigned long t = millis();
+    while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
+    if (wifi.hasResponse()) {
+      response = wifi.getResponse();
+      Serial.print("Got response at t=");
+      Serial.println(millis());
+      Serial.println(response);
+    } else {
+      Serial.println("No timely response");
+    }
+  }
+  else{
+    Serial.println("either wifi is disconnected or wifi is busy");
+  }
+  return response;
+}
+
 void postData(String questionID, int gameID, int roundNum, float deltaT, int correct, int score) {
   //posts the user's answer, etc. to sb3.py.
   String domain = "iesc-s2.mit.edu";

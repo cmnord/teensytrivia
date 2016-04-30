@@ -4,20 +4,17 @@ import cgi
 exec(open("/var/www/html/student_code/LIBS/s08libs.py").read())
 
 
-
-# Do some HTML formatting
+#HTML formatting
 print( "Content-type:text/html\r\n\r\n")
 print('<html>')
 
 #Set up the server connection
 cnx = _mysql.connect(user='cnord_jennycxu', passwd='Pg8rdAyj',db='cnord_jennycxu')
-
-
 method_type = get_method_type()
-
 form  = get_params()
 
-if method_type == "GET": #leaderboard
+#Display leaderboard
+if method_type == "GET":
     # Now pull data from database and compute on it
     shouldDelete = False
     if 'shouldDelete' in form.keys():
@@ -63,11 +60,9 @@ if method_type == "GET": #leaderboard
                     print('<p>'+ str(playersCount) + "." + rows[i][4].decode("utf-8") + " : " + str(rows[i][8]))
                     print('</p>')
             print('</body>')
-        #later: format the results of the query to show the top scorers and their scores
-        #also later: make sure this printing works in 2 ways: one for web, one for teensy
+        #TODO: for some reason some people are duplicated in the leaderboard
         
-
-########## DO NOT CHANGE ANYTHING BELOW THIS LINE ##########
+#this has to be included!
 print('</html>')
 
 
