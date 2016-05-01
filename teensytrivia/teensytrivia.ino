@@ -1,4 +1,4 @@
-#include <Adafruit_ST7735.h>
+e#include <Adafruit_ST7735.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <math.h>
@@ -74,7 +74,6 @@ void setup() {
 
   display.setCursor(0, 0);
   randomSeed(analogRead(0));//seed random number
-  gameID = random(1,999);
   display.setTextSize(2);
   menu();
 }
@@ -134,6 +133,7 @@ void menu() {
     delay(50);
   }
   if (!digitalRead(a_button)) {
+    gameID = random(1,999);
     String disp = "Creating game #" + String(gameID) + "...\nTell other players to select [B. Join game]!\n\nPRESS A TO BEGIN GAME\npress B to cancel";
     updateDisplay(disp);
     while(digitalRead(a_button) && digitalRead(b_button)){delay(50);} //wait until they press A or B
@@ -162,7 +162,7 @@ String getQuestion() {
     Serial.print("Getting question at t=");
     Serial.println(millis());
     String getPath = "/student_code/" + kerberos + "/dev1/sb1.py";
-    String getParams = "sender=" + kerberos + "&deviceType=teensty";
+    String getParams = "sender=" + kerberos + "&deviceType=teensy";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
     unsigned long t = millis();
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response

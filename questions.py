@@ -6,7 +6,7 @@
 
 import urllib.request
 import json
-from random import randint
+from random import randint, shuffle
 
 
 # Do some HTML formatting at the very top!
@@ -24,6 +24,7 @@ prompt = json_data["questions"][p]["prompt"]
 ans_list = json_data["questions"][p]["ans_list"]
 ans_list = ans_list[1:-1] #cuts off [ and ]
 ans_list = ans_list.split(", ") #turns this into a real python list
+shuffle(ans_list) #order of answers is now shuffled
 
 correct_ans = json_data["questions"][p]["correct_ans"]
 print("<h1>" + q_id + ". " + prompt + "</h1>")
@@ -33,7 +34,5 @@ for i in range(len(ans_list)):
     print("<li><%s>%s</%s></li>" %(alph[i],ans_list[i],alph[i]))
 print("</ul><h4>" + correct_ans + "</h4>")
 
-
-########## DO NOT CHANGE ANYTHING BELOW THIS LINE ##########
 # Close HTML page
 print('</html>')
