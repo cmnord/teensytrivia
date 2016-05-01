@@ -74,6 +74,7 @@ void setup() {
 
   display.setCursor(0, 0);
   randomSeed(analogRead(0));//seed random number
+  gameID = random(1,999);
   display.setTextSize(2);
   menu();
 }
@@ -126,15 +127,26 @@ void updateDisplay(String text) {
 }
 
 void menu() {
-  String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\nA. Start Game\nB. Leaderboard";
+  String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\nA. New Game [Solo]\nB. Join Game [Alpha]\nC. Leaderboard";
   updateDisplay(menuText);
-  while (digitalRead(a_button) && digitalRead(b_button)) {
-    //delay until you press A or B
+  while (digitalRead(a_button) && digitalRead(b_button) && digitalRead(c_button)) {
+    //delay until you press A, B, or C
     delay(50);
   }
-  if (!digitalRead(b_button)) {
+  if (!digitalRead(a_button)) {
+    String disp = "Creating game #" + String(gameID) + "...\nTell other players to select [B. Join game]!\n\nPRESS A TO BEGIN GAME\npress B to cancel";
+    updateDisplay(disp);
+    while(digitalRead(a_button) && digitalRead(b_button)){delay(50);} //wait until they press A or B
+    if(!digitalRead(b_button)){menu();}
+  }
+  if (!digitalRead(c_button)) {
     String lead = getLeaderboard();
     updateDisplay(lead);
+    delay(2000);
+    menu();
+  }
+  if (!digitalRead(b_button)) {
+    updateDisplay("Waiting for leader...\nJK, feature yet to be implemented!\nSorry!");
     delay(2000);
     menu();
   }
@@ -150,7 +162,7 @@ String getQuestion() {
     Serial.print("Getting question at t=");
     Serial.println(millis());
     String getPath = "/student_code/" + kerberos + "/dev1/sb1.py";
-    String getParams = "recipient=" + kerberos + "&source=teensey";
+    String getParams = "sender=" + kerberos + "&deviceType=teensty";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
     unsigned long t = millis();
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
@@ -178,7 +190,7 @@ String getLeaderboard() {
     Serial.print("Getting leaderboard at t=");
     Serial.println(millis());
     String getPath = "/student_code/cnord/dev1/sb2.py";
-    String getParams = "recipient=" + kerberos + "&deviceType=teensy";
+    String getParams = "sender=" + kerberos + "&deviceType=teensy";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
     unsigned long t = millis();
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
@@ -209,7 +221,7 @@ void postData(String questionID, int gameID, int roundNum, float deltaT, int cor
     //TODO: complete these get params
     String postParams = "sender=" + kerberos +
                         "&questionID=" + questionID +
-                        "&deviceType=teensey&gameID=" + String(gameID) +
+                        "&deviceType=teensy&gameID=" + String(gameID) +
                         "&roundNum=" + String(roundNum) +
                         "&delta=" + String(deltaT, 3) +
                         "&isCorrect=" + correct +
