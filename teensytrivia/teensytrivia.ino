@@ -1,4 +1,4 @@
-e#include <Adafruit_ST7735.h>
+#include <Adafruit_ST7735.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <math.h>
@@ -18,13 +18,15 @@ String MAC = "";
 String resp = "";
 uint32_t tLastIotReq = 0;       // time of last send/pull
 uint32_t tLastIotResp = 0;      // time of last response
+String domain = "iesc-s2.mit.edu";
+int port = 80;
 
 uint32_t tQuestionStart = 0; //used for determining delta
 uint32_t tQuestionEnd = 0; //used for determining delta
 float delta = 0; //time it takes for player to answer
 int id = 0; //question ID, different for each question
 bool isCorrect = 0;
-int currentScore = 0; //+10 for every correct answer
+//int currentScore = 0; //+10 for every correct answer
 int roundNum = 0; //this gets incremented every loop
 int gameID = 0; //this gets changed later
 
@@ -100,7 +102,7 @@ void loop() {
   isCorrect = 0;
   if (!digitalRead(correct_pin)) {
     isCorrect = 1;
-    currentScore += 10; //10 points per correct question
+    //currentScore += 10; //10 points per correct question
     Serial.println("Correct answer!");
     updateDisplay("Correct answer!\nPosting to DB...");
   }
@@ -110,7 +112,7 @@ void loop() {
   }
   tQuestionEnd = millis();
   delta = (tQuestionEnd - tQuestionStart) / 1000.;
-  postData(id, gameID, roundNum, delta, isCorrect, currentScore);
+  postData(id, gameID, roundNum, delta, isCorrect);
   String lead = getLeaderboard();
   updateDisplay(lead);
   delay(2000); //show leaderboard for 2 seconds
@@ -155,8 +157,6 @@ void menu() {
 
 String getQuestion() {
   //gets a question from sb1.py.
-  String domain = "iesc-s2.mit.edu";
-  int port = 80;
   String response = "";
   if (wifi.isConnected()) { //&& !wifi.isBusy()
     Serial.print("Getting question at t=");
@@ -183,8 +183,6 @@ String getQuestion() {
 
 String getLeaderboard() {
   //gets the leaderboard from sb2.py.
-  String domain = "iesc-s2.mit.edu";
-  int port = 80;
   String response = "";
   if (wifi.isConnected() && !wifi.isBusy()) {
     Serial.print("Getting leaderboard at t=");
@@ -212,8 +210,6 @@ String getLeaderboard() {
 
 void postData(String questionID, int gameID, int roundNum, float deltaT, int correct, int score) {
   //posts the user's answer, etc. to sb3.py.
-  String domain = "iesc-s2.mit.edu";
-  int port = 80;
   if (wifi.isConnected() && !wifi.isBusy()) {
     Serial.print("Posting data at t=");
     Serial.println(millis());
@@ -224,8 +220,8 @@ void postData(String questionID, int gameID, int roundNum, float deltaT, int cor
                         "&deviceType=teensy&gameID=" + String(gameID) +
                         "&roundNum=" + String(roundNum) +
                         "&delta=" + String(deltaT, 3) +
-                        "&isCorrect=" + correct +
-                        "&currentScore=" + String(score);  //deltaT is set to 3 decimal places
+                        "&isCorrect=" + correct;  //deltaT is set to 3 decimal places
+                        // does not include currentScore
     wifi.sendRequest(POST, domain, port, postPath, postParams);
     String junk = wifi.getResponse();
     Serial.println("This data was posted yay");
