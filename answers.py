@@ -59,10 +59,14 @@ elif method_type == 'GET':
     cnx.commit()
     #print leaderboard stuff now
     currentRound= 0
+    currentWinner = ""
     totalPlayers = len(rows)#temporary, add up all players who have answered
     print("<h2> These have answered correctly:</h2><p></p>")
   
     for i in range(len(rows)):
+        if i == 0:#the first one in this list has gone the fastest
+           currentWinner = rows[i][4].decode("utf-8")
+           print(currentWinner)
         print("<p>" + str(i+1) + ".")
         #unpack('h', rows[i][7])[0]) decodes bit
         if(int(rows[i][2]) > currentRound):
@@ -77,6 +81,9 @@ elif method_type == 'GET':
     totalPlayers = totalPlayers + len(rows)#add up all the rest of the players
     print("<h2> These have answered wrong:</h2><p></p>")
     for i in range(len(rows)):
+        if( i == 0 and len(currentWinner) == 0):#if no one got correct award fastest wrong one
+            currentWinner = rows[i][4].decode("utf-8")
+            print(currentWinner)
         if(int(rows[i][2]) > currentRound):
             currentRound = int(rows[i][2])#set to the highest round value
         print("<p>" + str(i+1) + ".")
@@ -88,7 +95,24 @@ elif method_type == 'GET':
     rows = result.fetch_row(maxrows=0,how=0) #what does this do?
     cnx.commit()
     print("<p>Round Status: " + str(len(rows)) + "/" + str(totalPlayers) + " have answered Round #" + str(currentRound))
-    
+    if(len(rows) == totalPlayers):
+        print("<R>Y</R><W>" + currentWinner + "</W>")#finished turn if this is true
+        query = ("SELECT * FROM response_db WHERE sender=\'"+str(currentWinner)+"\'")
+        cnx.query(query)
+        result = cnx.store_result()
+        rows = result.fetch_row(maxrows=0,how=0) #what does this do?
+        cnx.commit()
+        newScore = int(rows[0][0])
+        print("NEW SCORE : " + str(newScore))
+        if(rows[0][0] is None):
+            newScore = 0
+        newScore = newScore + 10 #score points for winning
+        print("NEW SCORE : " + str(newScore))
+        query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
+        cnx.query(query)
+        cnx.commit()
+    else:
+        print("<R>N</R>")
     print("</p><p>Total Players : " + str(totalPlayers) + "</p>")
     cnx.close()#close so we don't go over max connections
     #TODO: format the results of the query to show the top scorers and their scores

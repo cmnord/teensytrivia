@@ -34,6 +34,9 @@ int roundNum = 0; //this gets incremented every loop
 int gameID = 0; //this gets changed later
 int MAX_ROUNDS = 5; //game ends after MAX_ROUNDS questions
 
+String totalPlayers = "";
+String playersAnswered = "";
+
 #define SSID "MIT GUEST" // network SSID and password
 #define PASSWORD ""
 
@@ -121,6 +124,11 @@ void loop() {
   tQuestionEnd = millis();
   delta = (tQuestionEnd - tQuestionStart) / 1000.;
   postData(id, gameID, roundNum, delta, isCorrect);
+  while(getStatus() != "Y")
+  {
+    updateDisplay("Waiting for others to finish..." + playersAnswered + "/" + totalPlayers);
+    delay(500);//just check every half second or so for if someone won or not yet
+  }
   String lead = getLeaderboard();
   updateDisplay(lead);
   delay(2000); //show leaderboard for 2 seconds
@@ -200,6 +208,35 @@ void endGame() {
     while(true){delay(9000);} //delay forever
   }
   //if they select the A button, the game will restart
+}
+//check if the round is over
+String getStatus() {
+  //gets a question from sb1.py.
+  String response = "";
+  if (wifi.isConnected()) { //&& !wifi.isBusy()
+    Serial.print("Getting status at t=");
+    Serial.println(millis());
+    String getPath = "/student_code/" + kerberos + "/dev1/sb3.py";
+    String getParams = "";
+    wifi.sendRequest(GET, domain, port, getPath, getParams);
+    unsigned long t = millis();
+    while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
+    if (wifi.hasResponse()) {
+      response = wifi.getResponse();
+      Serial.print("Got response at t=");
+      Serial.println(millis());
+      Serial.println(response);
+      playersAnswered = response.substring(response.indexOf("Round Status")+14,response.indexOf("Round Status")+15);
+      totalPlayers = response.substring(response.indexOf("Round Status")+16,response.indexOf("Round Status")+17);
+      response = response.substring(response.indexOf("<R>")+3,response.indexOf("</R>"));
+    } else {
+      Serial.println("No timely response");
+    }
+  }
+  else{
+    Serial.println("either wifi is disconnected or wifi is busy");
+  }
+  return response;
 }
 
 String getQuestion() {
