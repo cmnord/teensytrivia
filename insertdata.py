@@ -23,9 +23,10 @@ def insertIntoDB(gameID,roundNum,questionID,sender,deviceType,delta,isCorrect):
         query = ("UPDATE response_db SET isCorrect="+str(isCorrect)+", delta="+str(delta)+",questionID="+str(questionID)+",roundNum="+str(roundNum)+" WHERE sender=\'"+str(sender)+"\'")
     cnx.query(query)
     cnx.commit()
+ #close so we don't go over max connectionsz
     #create a mySQL query and commit to database relevant information for logging message
  
-if method_type == 'POST':
+if method_type == 'GET':
     gameID = form.getvalue("gameID")
     roundNum = form.getvalue("roundNum")
     questionID = form.getvalue("questionID")
@@ -48,49 +49,19 @@ if method_type == 'POST':
     #roundNum = 1
     
     insertIntoDB(gameID,roundNum,questionID,str(sender),deviceType,delta,isCorrect)
-
-elif method_type == 'GET':
-    # Now pull data from database and compute on it
     print('<h1>Current Question Results</h1>')
-    query = ("SELECT * FROM response_db WHERE isCorrect=1 ORDER BY delta") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
+    query = ("SELECT * FROM response_db") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
     cnx.query(query)
     result = cnx.store_result()
     rows = result.fetch_row(maxrows=0,how=0) #what does this do?
     cnx.commit()
     #print leaderboard stuff now
-    currentRound= 0
-    totalPlayers = len(rows)#temporary, add up all players who have answered
     print("<h2> These have answered correctly:</h2><p></p>")
-  
     for i in range(len(rows)):
         print("<p>" + str(i+1) + ".")
-        #unpack('h', rows[i][7])[0]) decodes bit
-        if(int(rows[i][2]) > currentRound):
-            currentRound = int(rows[i][2])#set to the highest round value
-        print(rows[i][4].decode("utf-8") + " answered question " + str(rows[i][2]) + " and their response time was " + str(rows[i][6]) + " and their current score is " + str(rows[i][8]))
+        print(rows[i])
         print("</p>")
-    query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
-    cnx.query(query)
-    result = cnx.store_result()
-    rows = result.fetch_row(maxrows=0,how=0) #what does this do?
-    cnx.commit()
-    totalPlayers = totalPlayers + len(rows)#add up all the rest of the players
-    print("<h2> These have answered wrong:</h2><p></p>")
-    for i in range(len(rows)):
-        if(int(rows[i][2]) > currentRound):
-            currentRound = int(rows[i][2])#set to the highest round value
-        print("<p>" + str(i+1) + ".")
-        print(rows[i][4].decode("utf-8") + " answered question " + str(rows[i][2]) + " and their response time was " + str(rows[i][6]) + " and their current score is " + str(rows[i][8]))
-        print("</p>")
-    query = ("SELECT * FROM response_db WHERE roundNum=" + str(currentRound)) #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
-    cnx.query(query)
-    result = cnx.store_result()
-    rows = result.fetch_row(maxrows=0,how=0) #what does this do?
-    cnx.commit()
-    print("<p>Round Status: " + str(len(rows)) + "/" + str(totalPlayers) + " have answered Round #" + str(currentRound))
-    
-    print("</p><p>Total Players : " + str(totalPlayers) + "</p>")
-    cnx.close()#close so we don't go over max connections
+    cnx.close()
     #TODO: format the results of the query to show the top scorers and their scores
     #TODO: make sure this printing works in 2 ways: one for web, one for teensy
 

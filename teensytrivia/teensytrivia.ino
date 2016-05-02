@@ -7,6 +7,7 @@
 #include <Adafruit_SSD1306.h>
 #include <ESP8266.h>
 
+
 Adafruit_SSD1306 display(4);
 
 #define IOT 1
@@ -14,7 +15,7 @@ Adafruit_SSD1306 display(4);
 #define wifiSerial Serial1          // for ESP chip
 
 //wifi/internet globals
-String kerberos = "cnord";        // UPDATE WITH YOUR KERBEROS
+String kerberos = "jennycxu";        // UPDATE WITH YOUR KERBEROS
 String MAC = "";
 String resp = "";
 uint32_t tLastIotReq = 0;       // time of last send/pull
@@ -39,11 +40,10 @@ int MAX_ROUNDS = 5; //game ends after MAX_ROUNDS questions
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
 
 //define buttons
-int a_button = 4; //black
-int b_button = 2; //black
-int c_button = 8; //yellow
-int d_button = 6; //blue
-
+int a_button = 11; //black
+int b_button = 12; //black
+int c_button = 10; //yellow
+int d_button = 9; //blue
 void setup() {
   Serial.begin(115200);
   //button setup
@@ -97,6 +97,7 @@ void loop() {
   if (resp.equals("")){
     Serial.println("Response is empty :((((");
   }
+  
   int correct_pin = parseResponse(resp);
   //resp is now nicely formatted
   updateDisplay(resp);
@@ -107,14 +108,15 @@ void loop() {
   }
   isCorrect = 0;
   if (!digitalRead(correct_pin)) {
+    Serial.println("Correct pin!");
     isCorrect = 1;
     //currentScore += 10; //10 points per correct question
     Serial.println("Correct answer!");
-    updateDisplay("Correct answer!\nPosting to DB...");
+    updateDisplay("Correct answer!\nWaiting for others to finish...");
   }
   else {
     Serial.println("Sorry, wrong answer\n:(");
-    updateDisplay("Sorry, wrong answer\n:(\nPosting to DB...");
+    updateDisplay("Sorry, wrong answer\n:(\nWaiting for others to finish...");
   }
   tQuestionEnd = millis();
   delta = (tQuestionEnd - tQuestionStart) / 1000.;
@@ -140,12 +142,26 @@ void menu() {
     //delay until you press A, B, or C
     delay(50);
   }
+  //stop game until this loop completes -> starts the loop function
   if (!digitalRead(a_button)) {
+     Serial.println("pressed a");
     gameID = random(1,999);
     String disp = "Creating game #" + String(gameID) + "...\nTell other players to select [B. Join game]!\n\nPRESS A TO BEGIN GAME\npress B to cancel";
     updateDisplay(disp);
-    while(digitalRead(a_button) && digitalRead(b_button)){delay(50);} //wait until they press A or B
-    if(!digitalRead(b_button)){menu();}
+    roundNum = 0;//start game off at 0 round
+    delta = 0;//nonexistent delta
+    isCorrect = 0;//no score yet
+    id = 1;//PLACEHOLDER VALUE
+    postData(id, gameID, roundNum, delta, isCorrect);
+    
+    delay(1000);
+    while(digitalRead(a_button) && digitalRead(b_button)){
+      if(!digitalRead(b_button)){
+        menu();
+       }
+      delay(50);
+    } //wait until they press A or B
+    Serial.println("START GAME");
   }
   if (!digitalRead(c_button)) {
     String lead = getLeaderboard();
@@ -290,7 +306,21 @@ int parseResponse(String response) {
   ans_c = response.substring(response.indexOf("<C>") + 3, response.indexOf("</C>"));
   ans_d = response.substring(response.indexOf("<D>") + 3, response.indexOf("</D>"));
   correct_ans = response.substring(response.indexOf("<h4>") + 4, response.indexOf("</h4>"));
-  
+
+  //since all answers aren't shuffled, I will shuffle them now
+  String shuffledAnswers[4] = {ans_a,ans_b,ans_c,ans_d};
+  for (int a=0; a<4; a+= 1)
+  {
+    String tempString;
+     int r = int(random(a,3)); // dont remember syntax just now, random from a to 8 included.
+     tempString = shuffledAnswers[a];
+     shuffledAnswers[a] = shuffledAnswers[r];
+     shuffledAnswers[r] = tempString;
+  }
+  ans_a = shuffledAnswers[0];
+  ans_b = shuffledAnswers[1];
+  ans_c = shuffledAnswers[2];
+  ans_d = shuffledAnswers[3];
   int ans_pin = a_button;
   if (correct_ans.equals(ans_b)) {
     ans_pin = b_button;

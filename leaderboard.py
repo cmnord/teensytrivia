@@ -34,7 +34,7 @@ if method_type == "GET":
         print(rows)
         
     else:
-        query = ("SELECT * FROM response_db ORDER BY currentScore") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
+        query = ("SELECT * FROM response_db ORDER BY currentScore DESC") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
         cnx.query(query)
         result = cnx.store_result()
         rows = result.fetch_row(maxrows=0,how=0) #what does this do?
@@ -45,7 +45,10 @@ if method_type == "GET":
             for i in range(len(rows)):
                 if rows[i][8] != None:
                     playersCount = playersCount + 1
-                    print(str(playersCount) + "." + rows[i][4].decode("utf-8") + " : " + str(rows[i][8]) + "\n")            
+                    print(str(playersCount) + "." + rows[i][4].decode("utf-8") + " : " + str(rows[i][8]) + "\n")
+                else :
+                    playersCount = playersCount + 1
+                    print(str(playersCount) + "." + rows[i][4].decode("utf-8") + " : 0\n")
         else:
             print('<head>')
             print('<title>Posts Trivia Responses to Database</title>')
@@ -60,6 +63,11 @@ if method_type == "GET":
                     playersCount = playersCount + 1
                     print('<p>'+ str(playersCount) + "." + rows[i][4].decode("utf-8") + " : " + str(rows[i][8]))
                     print('</p>')
+                else :
+                    playersCount = playersCount + 1
+                    print('<p>'+ str(playersCount) + "." + rows[i][4].decode("utf-8") + " :0")
+                    print('</p>')
+                    
             print('</body>')
         #TODO: for some reason some people are duplicated in the leaderboard
         
