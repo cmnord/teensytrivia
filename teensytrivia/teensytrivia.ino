@@ -30,16 +30,16 @@ bool isCorrect = 0;
 int roundNum = 0; //this gets incremented every loop
 int gameID = 0; //this gets changed later
 
-#define SSID "Grace's iPhone" // network SSID and password
-#define PASSWORD "gracemelcher"
+#define SSID "MIT GUEST" // network SSID and password
+#define PASSWORD ""
 
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
 
 //define buttons
-int a_button = 4; //black
-int b_button = 2; //black
-int c_button = 8; //yellow
-int d_button = 6; //blue
+int a_button = 11; //black
+int b_button = 12; //black
+int c_button = 10; //yellow
+int d_button = 9; //blue
 
 void setup() {
   Serial.begin(115200);
@@ -95,7 +95,7 @@ void loop() {
   //resp is now nicely formatted
   updateDisplay(resp);
   tQuestionStart = millis();
-  while (digitalRead(a_button) && digitalRead(b_button) && digitalRead(c_button) && digitalRead(d_button)) {
+  while (digitalRead(a_button) && digitalRead(b_button) && digitalRead(c_button) && digitalRead(d_button) ) {
     //delay until you press a button again
     delay(50); //this means all deltas will be in 50-ms increments (adjust the delay to make shorter delta)
   }
@@ -208,7 +208,7 @@ String getLeaderboard() {
   return response;
 }
 
-void postData(String questionID, int gameID, int roundNum, float deltaT, int correct, int score) {
+void postData(String questionID, int gameID, int roundNum, float deltaT, int correct) {
   //posts the user's answer, etc. to sb3.py.
   if (wifi.isConnected() && !wifi.isBusy()) {
     Serial.print("Posting data at t=");
@@ -263,13 +263,12 @@ int parseResponse(String response) {
   int ans_pin = a_button;
   if (correct_ans.equals(ans_b)) {
     ans_pin = b_button;
-  }
-  else if (correct_ans.equals(ans_c)) {
+  } else if (correct_ans.equals(ans_c)) {
     ans_pin = c_button;
-  }
-  else if (correct_ans.equals(ans_d)) {
+  } else if (correct_ans.equals(ans_d)) {
     ans_pin = d_button;
   }
+  
   resp = question + "\n";
   resp += "A. " + ans_a + "\nB. " + ans_b + "\nC. " + ans_c + "\nD. " + ans_d;
   return ans_pin;

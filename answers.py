@@ -9,7 +9,7 @@ cnx = _mysql.connect(user='cnord_jennycxu', passwd='Pg8rdAyj',db='cnord_jennycxu
 method_type = get_method_type()
 form = cgi.FieldStorage() #get specified parameters!
 
-def insertIntoDB(gameID,roundNum,questionID,sender,deviceType,delta,isCorrect,currentScore):
+def insertIntoDB(gameID,roundNum,questionID,sender,deviceType,delta,isCorrect):
     cnx = _mysql.connect(user='cnord_jennycxu', passwd='Pg8rdAyj',db='cnord_jennycxu')
     query = ("SELECT * FROM response_db WHERE sender=\'"+ str(sender)+"\'")
     cnx.query(query)
@@ -18,9 +18,9 @@ def insertIntoDB(gameID,roundNum,questionID,sender,deviceType,delta,isCorrect,cu
     rows = result.fetch_row(maxrows=0,how=0)
     #if there is some entry already there for someone, just update it instead of making a new entry
     if(len(rows) <= 0):
-        query = ("INSERT INTO response_db (gameID, roundNum, questionID, sender, deviceType, delta, isCorrect, currentScore) VALUES ("+str(gameID)+", "+str(roundNum)+", "+str(questionID)+", \'"+str(sender)+"\', \'"+str(deviceType)+"\', "+str(delta)+", "+str(isCorrect)+", "+str(currentScore)+")")
+        query = ("INSERT INTO response_db (gameID, roundNum, questionID, sender, deviceType, delta, isCorrect) VALUES ("+str(gameID)+", "+str(roundNum)+", "+str(questionID)+", \'"+str(sender)+"\', \'"+str(deviceType)+"\', "+str(delta)+", "+str(isCorrect)+")")
     else:
-        query = ("UPDATE response_db SET currentScore="+str(currentScore)+", isCorrect="+str(isCorrect)+", delta="+str(delta)+",questionID="+str(questionID)+",roundNum="+str(roundNum)+" WHERE sender=\'"+str(sender)+"\'")
+        query = ("UPDATE response_db SET isCorrect="+str(isCorrect)+", delta="+str(delta)+",questionID="+str(questionID)+",roundNum="+str(roundNum)+" WHERE sender=\'"+str(sender)+"\'")
     cnx.query(query)
     cnx.commit()
     #create a mySQL query and commit to database relevant information for logging message
@@ -47,7 +47,7 @@ if method_type == 'POST':
     #questionID = 0
     #roundNum = 1
     
-    insertIntoDB(gameID,roundNum,questionID,str(sender),deviceType,delta,isCorrect,currentScore)
+    insertIntoDB(gameID,roundNum,questionID,str(sender),deviceType,delta,isCorrect)
 
 elif method_type == 'GET':
     # Now pull data from database and compute on it
