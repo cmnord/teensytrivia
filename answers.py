@@ -83,18 +83,20 @@ elif method_type == 'GET':
         rows = result.fetch_row(maxrows=0,how=0) #what does this do?
         cnx.commit()
         if(len(rows) == totalPlayers):
-            query = ("SELECT * FROM response_db WHERE sender=\'"+str(currentWinner)+"\'")
+            query = ("SELECT currentScore FROM response_db WHERE sender=\'"+str(currentWinner)+"\'")
             cnx.query(query)
             result = cnx.store_result()
             rows = result.fetch_row(maxrows=0,how=0) #what does this do?
             cnx.commit()
-            newScore = int(rows[0][0])
-            if(rows[0][0] is None):
+            if(len(rows) > 0 and rows[0][0] is None):
                 newScore = 0
-            newScore = newScore + 10 #score points for winning
-            query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
-            cnx.query(query)
-            cnx.commit()
+            elif(len(rows) > 0):
+                newScore = int(rows[0][0])
+            if(len(rows) > 0):
+                newScore = newScore + 10 #score points for winning
+                query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
+                cnx.query(query)
+                cnx.commit()
         print("<w>" + currentWinner + "</w>")
 
     else:
@@ -140,15 +142,12 @@ elif method_type == 'GET':
             result = cnx.store_result()
             rows = result.fetch_row(maxrows=0,how=0) #what does this do?
             cnx.commit()
-            #print(rows)
             if(len(rows) > 0 and rows[0][0] is None):
                 newScore = 0
             elif(len(rows) > 0):
                 newScore = int(rows[0][0])
             if(len(rows) > 0):
-                #print("NEW SCORE : " + str(newScore))
                 newScore = newScore + 10 #score points for winning
-                #print("NEW SCORE : " + str(newScore))
                 query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
                 cnx.query(query)
                 cnx.commit()
