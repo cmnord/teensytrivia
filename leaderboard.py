@@ -42,13 +42,19 @@ if method_type == "GET":
         if(form.getvalue('deviceType') == 'teensy' or form.getvalue('deviceType') == 'teensey'):
             print('LEADERBOARD\n')
             playersCount = 0
+            winnerScore = 0
+            currentWinner = ''
             for i in range(len(rows)):
                 if rows[i][8] != None:
                     playersCount = playersCount + 1
                     print(str(playersCount) + "." + rows[i][4].decode("utf-8") + " : " + str(rows[i][8]) + "\n")
+                    if(int(rows[i][8]) >= winnerScore):
+                        winnerScore = int(rows[i][8])
+                        currentWinner = rows[i][4].decode("utf-8")
                 else :
                     playersCount = playersCount + 1
                     print(str(playersCount) + "." + rows[i][4].decode("utf-8") + " : 0\n")
+            print("<b>Current winner is <w>"+currentWinner+"</w> with a score of <s>"+str(winnerScore)+"</s>")
         else:
             print('<head>')
             print('<title>Posts Trivia Responses to Database</title>')

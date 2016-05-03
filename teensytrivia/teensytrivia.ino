@@ -32,7 +32,7 @@ bool isCorrect = 0;
 //int currentScore = 0; //+10 for every correct answer
 int roundNum = 0; //this gets incremented every loop
 int gameID = 0; //this gets changed later
-int MAX_ROUNDS = 5; //game ends after MAX_ROUNDS questions
+int MAX_ROUNDS = 1; //game ends after MAX_ROUNDS questions
 
 String totalPlayers = "";
 String playersAnswered = "";
@@ -43,23 +43,11 @@ String playersAnswered = "";
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
 
 //define buttons
-if(kerberos.equals("jennycxu")){
-  int a_button = 11; //black
-  int b_button = 12; //black
-  int c_button = 10; //yellow
-  int d_button = 9; //blue
-}else{
-  int a_button = 4; //black
-  int b_button = 2; //black
-  int c_button = 8; //yellow
-  int d_button = 6; //blue
+int a_button = 4; //black
+int b_button = 2; //black
+int c_button = 8; //yellow
+int d_button = 6; //blue
 
-}
-
-int a_button = 11; //black
-int b_button = 12; //black
-int c_button = 10; //yellow
-int d_button = 9; //blue
 void setup() {
   Serial.begin(115200);
   //button setup
@@ -102,7 +90,7 @@ void setup() {
 void loop() {
   Serial.println("----------begin loop-----------------");
   wifi.clearRequest();
-  if(roundNum==MAX_ROUNDS){
+  if (roundNum == MAX_ROUNDS) {
     endGame();
   }
   roundNum += 1;
@@ -110,7 +98,7 @@ void loop() {
   resp = getQuestion();
   //  tLastIotReq = millis();
   //}
-  if (resp.equals("")){
+  if (resp.equals("")) {
     Serial.println("Response is empty :((((");
   }
 
@@ -136,14 +124,14 @@ void loop() {
   tQuestionEnd = millis();
   delta = (tQuestionEnd - tQuestionStart) / 1000.;
   postData(id, gameID, roundNum, delta, isCorrect);
-  while(getStatus() != "Y")
+  while (getStatus() != "Y")
   {
     updateDisplay("Waiting for others to finish..." + playersAnswered + "/" + totalPlayers);
     delay(500);//just check every half second or so for if someone won or not yet
   }
-  String lead = getLeaderboard();
-  updateDisplay(lead);
-  delay(2000); //show leaderboard for 2 seconds
+  String winner = getWinner();
+  updateDisplay(winner + " won this round! Get ready for the next round...");
+  delay(2000); //show winner for 2 seconds
 }
 
 void updateDisplay(String text) {
@@ -156,7 +144,7 @@ void updateDisplay(String text) {
 }
 
 void menu() {
-  String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\nA. New Game [Solo]\nB. Join Game [Alpha]\nC. Leaderboard";
+  String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\nA. New Game\nB. Join Game\nC. Leaderboard";
   updateDisplay(menuText);
   while (digitalRead(a_button) && digitalRead(b_button) && digitalRead(c_button)) {
     //delay until you press A, B, or C
@@ -165,8 +153,8 @@ void menu() {
   //stop game until this loop completes -> starts the loop function
   if (!digitalRead(a_button)) {
     Serial.println("pressed a");
-    gameID = random(1,999);
-    String disp = "Creating game #" + String(gameID) + "...\nTell other players to select [B. Join game]!\n\nPRESS A TO BEGIN GAME\npress B to cancel";
+    gameID = random(1, 999);
+    String disp = "Creating game #" + String(gameID) + "...\nTell other players to select [Join game]!\nPRESS A TO BEGIN GAME\npress B to cancel";
     updateDisplay(disp);
     roundNum = 0;//start game off at 0 round
     delta = 0;//nonexistent delta
@@ -175,8 +163,8 @@ void menu() {
     postData(id, gameID, roundNum, delta, isCorrect);
 
     delay(1000);
-    while(digitalRead(a_button) && digitalRead(b_button)){
-      if(!digitalRead(b_button)){
+    while (digitalRead(a_button) && digitalRead(b_button)) {
+      if (!digitalRead(b_button)) {
         menu();
       }
       delay(50);
@@ -185,6 +173,7 @@ void menu() {
   }
   if (!digitalRead(c_button)) {
     String lead = getLeaderboard();
+    lead = lead.substring(0,lead.indexOf("<b>"));
     updateDisplay(lead);
     delay(2000);
     menu();
@@ -199,20 +188,23 @@ void menu() {
 
 void endGame() {
   //shows some stats at the end of the game.  Consider changing these to "press A to advance" instead of delay(whatever).
-  String menuText = "Game over!\nFinal Leaderboard:";
+  String menuText = "Game over!\nGetting final leaderboard...\n(press A to advance)";
   updateDisplay(menuText);
-  delay(3000);
+  while(digitalRead(a_button)){delay(50);}
   String lead = getLeaderboard();
-  updateDisplay(lead);
-  delay(3000);
-  menuText = "And the winner is....";
+  String leaderboard = lead.substring(0,lead.indexOf("<b>"));
+  updateDisplay(leaderboard);
+  while(digitalRead(a_button)){delay(50);}
+  menuText = "And the winner is....\n(Press A to advance)";
   updateDisplay(menuText);
-  delay(2000);
-  String winner = getWinner();
-  updateDisplay(winner + " wins!!\nCongrats!!");
-  delay(4000);
+  while(digitalRead(a_button)){delay(50);}
+  String winner = lead.substring(lead.indexOf("<w>")+3,lead.indexOf("</w>"));
+  String winScore = lead.substring(lead.indexOf("<s>")+3,lead.indexOf("</s>"));
+  updateDisplay(winner + " wins with a score of " +winScore+"!!\nCongrats!!\n(Press A to advance)");
+  while(digitalRead(a_button)){delay(50);}
   menuText = "Play again?\nA. YES\nB. NO";
   updateDisplay(menuText);
+  delay(50); //prevents accidental double clicks
   while (digitalRead(a_button) && digitalRead(b_button)) {
     //delay until you press A or B
     delay(50);
@@ -224,12 +216,13 @@ void endGame() {
   if (!digitalRead(b_button)) {
     menuText = "GAME OVER";
     updateDisplay(menuText);
-    while(true){
+    while (true) {
       delay(9000);
     } //delay forever
   }
   //if they select the A button, the game will restart
 }
+
 //check if the round is over
 String getStatus() {
   //gets a question from sb1.py.
@@ -247,15 +240,15 @@ String getStatus() {
       Serial.print("Got response at t=");
       Serial.println(millis());
       Serial.println(response);
-      playersAnswered = response.substring(response.indexOf("Round Status")+14,response.indexOf("Round Status")+15);
-      totalPlayers = response.substring(response.indexOf("Round Status")+16,response.indexOf("Round Status")+17);
-      response = response.substring(response.indexOf("<R>")+3,response.indexOf("</R>"));
-    } 
+      playersAnswered = response.substring(response.indexOf("Round Status") + 14, response.indexOf("Round Status") + 15);
+      totalPlayers = response.substring(response.indexOf("Round Status") + 16, response.indexOf("Round Status") + 17);
+      response = response.substring(response.indexOf("<R>") + 3, response.indexOf("</R>"));
+    }
     else {
       Serial.println("No timely response");
     }
   }
-  else{
+  else {
     Serial.println("either wifi is disconnected or wifi is busy");
   }
   return response;
@@ -277,12 +270,12 @@ String getQuestion() {
       Serial.print("Got response at t=");
       Serial.println(millis());
       Serial.println(response);
-    } 
+    }
     else {
       Serial.println("No timely response");
     }
   }
-  else{
+  else {
     Serial.println("either wifi is disconnected or wifi is busy");
   }
   return response;
@@ -304,13 +297,13 @@ String getWinner() {
       Serial.print("Got response at t=");
       Serial.println(millis());
       Serial.println(response);
-      response = response.substring(response.indexOf("<w>")+3,response.indexOf("</w>"));
-    } 
+      response = response.substring(response.indexOf("<w>") + 3, response.indexOf("</w>"));
+    }
     else {
       Serial.println("No timely response");
     }
   }
-  else{
+  else {
     Serial.println("either wifi is disconnected or wifi is busy");
   }
   return response;
@@ -332,13 +325,13 @@ String getLeaderboard() {
       Serial.print("Got response at t=");
       Serial.println(millis());
       Serial.println(response);
-      response = response.substring(response.indexOf("<html>")+6,response.indexOf("</html>"));
-    } 
+      response = response.substring(response.indexOf("<html>") + 6, response.indexOf("</html>"));
+    }
     else {
       Serial.println("No timely response");
     }
   }
-  else{
+  else {
     Serial.println("either wifi is disconnected or wifi is busy");
   }
   return response;
@@ -352,11 +345,11 @@ void postData(String questionID, int gameID, int roundNum, float deltaT, int cor
     String postPath = "/student_code/" + kerberos + "/dev1/sb3.py";
     //TODO: complete these get params
     String postParams = "sender=" + kerberos +
-      "&questionID=" + questionID +
-      "&deviceType=teensy&gameID=" + String(gameID) +
-      "&roundNum=" + String(roundNum) +
-      "&delta=" + String(deltaT, 3) +
-      "&isCorrect=" + correct;  //deltaT is set to 3 decimal places
+                        "&questionID=" + questionID +
+                        "&deviceType=teensy&gameID=" + String(gameID) +
+                        "&roundNum=" + String(roundNum) +
+                        "&delta=" + String(deltaT, 3) +
+                        "&isCorrect=" + correct;  //deltaT is set to 3 decimal places
     // does not include currentScore
     wifi.sendRequest(POST, domain, port, postPath, postParams);
     String junk = wifi.getResponse();
@@ -373,14 +366,14 @@ int parseResponse(String response) {
   //should this be two different methods?
   /*
     resp format:
-   <html><h1>008. What was the name of Cheerios when it was first marketed 50 years ago?</h1><ul>
-   <li><a>Cheerioats</a></li>
-   <li><b>Cheer Oats</b></li>
-   <li><c>Cheerie's</c></li>
-   <li><d>Cheerio-Loops</d></li>
-   </ul><h4>Cheerioats</h4>
-   </body></html>
-   */
+    <html><h1>008. What was the name of Cheerios when it was first marketed 50 years ago?</h1><ul>
+    <li><a>Cheerioats</a></li>
+    <li><b>Cheer Oats</b></li>
+    <li><c>Cheerie's</c></li>
+    <li><d>Cheerio-Loops</d></li>
+    </ul><h4>Cheerioats</h4>
+    </body></html>
+  */
   String question = "";
   String ans_a = "";
   String ans_b = "";
@@ -398,11 +391,12 @@ int parseResponse(String response) {
 
   //since all answers aren't shuffled, I will shuffle them now
   String shuffledAnswers[4] = {
-    ans_a,ans_b,ans_c,ans_d  };
-  for (int a=0; a<4; a+= 1)
+    ans_a, ans_b, ans_c, ans_d
+  };
+  for (int a = 0; a < 4; a += 1)
   {
     String tempString;
-    int r = int(random(a,3)); // dont remember syntax just now, random from a to 8 included.
+    int r = int(random(a, 3)); // dont remember syntax just now, random from a to 8 included.
     tempString = shuffledAnswers[a];
     shuffledAnswers[a] = shuffledAnswers[r];
     shuffledAnswers[r] = tempString;
