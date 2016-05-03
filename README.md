@@ -20,6 +20,8 @@ Claire Nord and Jenny Xu
 - when the last player submits answer to answer.py does a check of who won
 - in answers.py when len(rows) == num players can calclate winner take the top entry in database as winner and print winner at the top and if the person GET's the current winner and it matches themself, add to their currentscore, and then teenseytrivia.ino GET's currentScore and updates local score then that winner's teensey sends a POST to questions and the flag shows the next question 
 - can add leaderboard showing later or in between
+-Add score correctly to game
+-show the winner of each round
 
 ##Milestones
 - April 28: Multiplayer support: how to sync up, join a game together

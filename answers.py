@@ -135,17 +135,19 @@ elif method_type == 'GET':
         print("<p>Round Status: " + str(len(rows)) + "/" + str(totalPlayers) + " have answered Round #" + str(currentRound))
         if(len(rows) == totalPlayers):
             print("<R>Y</R><W>" + currentWinner + "</W>")#finished turn if this is true
-            query = ("SELECT * FROM response_db WHERE sender=\'"+str(currentWinner)+"\'")
+            query = ("SELECT currentScore FROM response_db WHERE sender=\'"+str(currentWinner)+"\'")
             cnx.query(query)
             result = cnx.store_result()
             rows = result.fetch_row(maxrows=0,how=0) #what does this do?
             cnx.commit()
-            newScore = int(rows[0][0])
-            print("NEW SCORE : " + str(newScore))
+            #print(rows)
             if(rows[0][0] is None):
                 newScore = 0
+            else:
+                newScore = int(rows[0][0])
+            #print("NEW SCORE : " + str(newScore))
             newScore = newScore + 10 #score points for winning
-            print("NEW SCORE : " + str(newScore))
+            #print("NEW SCORE : " + str(newScore))
             query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
             cnx.query(query)
             cnx.commit()
