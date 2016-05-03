@@ -22,6 +22,7 @@ Claire Nord and Jenny Xu
 - can add leaderboard showing later or in between
 -Add score correctly to game
 -show the winner of each round
+-need to clear database at the end of each round
 
 ##Milestones
 - April 28: Multiplayer support: how to sync up, join a game together

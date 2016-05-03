@@ -39,7 +39,7 @@ def updateQuestionID(questionID):
     print(rows)
     for i in range(len(rows)):
         sender = (rows[i][0]).decode("utf-8")
-        query = ("UPDATE response_db SET isCorrect=0,delta=0,questionID="+str(questionID) +" WHERE sender=\'"+str(sender)+"\'")
+        query = ("UPDATE response_db SET isCorrect=0,delta=-1,questionID="+str(questionID) +" WHERE sender=\'"+str(sender)+"\'")
         cnx.query(query)
         cnx.commit()
     cnx.close()
@@ -53,13 +53,16 @@ if method_type == 'GET':
         result = cnx.store_result()
         rows = result.fetch_row(maxrows=0,how=0)
         #if there is some entry already there for someone, just update it instead of making a new entry
-        if(len(rows) > 0 and float(rows[0][6]) != 0):#when delta isn't 0 = flag for when there is a previous question there
-           p = randint(0,(len(json_data["questions"]))) - 1 #random question index number
+        if(len(rows) > 0 and float(rows[0][6]) != -1):#when delta isn't 0 = flag for when there is a previous question there
+           p = randint(0,(len(json_data["questions"]) - 1)) #random question index number
            updateQuestionID(p) #update which question for all players
-           print("New question generated for Round")
+           print("New question generated for Round is:" + str(p))
         elif len(rows) > 0:
+            print(float(rows[0][6]));
             p = int(rows[0][3])#set to the value in the db that is the questionID
-            print("Already have a question for Round")
+            print("Already have a question for Round:" + str(p))
+        else:
+            p = randint(0,(len(json_data["questions"]) - 1)) #random question index number
             
  
         q_id = (json_data["questions"][p]["id"]).strip()
