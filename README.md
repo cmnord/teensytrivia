@@ -23,6 +23,8 @@ Claire Nord and Jenny Xu
 -Add score correctly to game
 -show the winner of each round
 -need to clear database at the end of each round
+-check why questionID is always 1 and also check that questions are always the same across teenseys(sender=jennycxu&questionID=1&deviceType=teensy&gameID=932&roundNum=0&delta=0.000&isCorrect=0
+)
 
 ##Milestones
 - April 28: Multiplayer support: how to sync up, join a game together
