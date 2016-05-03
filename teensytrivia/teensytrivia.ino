@@ -15,7 +15,7 @@ Adafruit_SSD1306 display(4);
 #define wifiSerial Serial1          // for ESP chip
 
 //wifi/internet globals
-String kerberos = "jennycxu";        // UPDATE WITH YOUR KERBEROS
+String kerberos = "cnord";        // UPDATE WITH YOUR KERBEROS
 String MAC = "";
 String resp = "";
 uint32_t tLastIotReq = 0;       // time of last send/pull
@@ -43,6 +43,19 @@ String playersAnswered = "";
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
 
 //define buttons
+if(kerberos.equals("jennycxu")){
+  int a_button = 11; //black
+  int b_button = 12; //black
+  int c_button = 10; //yellow
+  int d_button = 9; //blue
+}else{
+  int a_button = 4; //black
+  int b_button = 2; //black
+  int c_button = 8; //yellow
+  int d_button = 6; //blue
+
+}
+
 int a_button = 11; //black
 int b_button = 12; //black
 int c_button = 10; //yellow
@@ -94,13 +107,13 @@ void loop() {
   }
   roundNum += 1;
   //if (millis() - tLastIotReq >= IOT_UPDATE_INTERVAL) {
-    resp = getQuestion();
+  resp = getQuestion();
   //  tLastIotReq = millis();
   //}
   if (resp.equals("")){
     Serial.println("Response is empty :((((");
   }
-  
+
   int correct_pin = parseResponse(resp);
   //resp is now nicely formatted
   updateDisplay(resp);
@@ -113,7 +126,6 @@ void loop() {
   if (!digitalRead(correct_pin)) {
     Serial.println("Correct pin!");
     isCorrect = 1;
-    //currentScore += 10; //10 points per correct question
     Serial.println("Correct answer!");
     updateDisplay("Correct answer!\nWaiting for others to finish...");
   }
@@ -152,7 +164,7 @@ void menu() {
   }
   //stop game until this loop completes -> starts the loop function
   if (!digitalRead(a_button)) {
-     Serial.println("pressed a");
+    Serial.println("pressed a");
     gameID = random(1,999);
     String disp = "Creating game #" + String(gameID) + "...\nTell other players to select [B. Join game]!\n\nPRESS A TO BEGIN GAME\npress B to cancel";
     updateDisplay(disp);
@@ -161,12 +173,12 @@ void menu() {
     isCorrect = 0;//no score yet
     id = 1;//PLACEHOLDER VALUE
     postData(id, gameID, roundNum, delta, isCorrect);
-    
+
     delay(1000);
     while(digitalRead(a_button) && digitalRead(b_button)){
       if(!digitalRead(b_button)){
         menu();
-       }
+      }
       delay(50);
     } //wait until they press A or B
     Serial.println("START GAME");
@@ -186,12 +198,19 @@ void menu() {
 }
 
 void endGame() {
-  String menuText = "Game over! Here are your final results:";
+  //shows some stats at the end of the game.  Consider changing these to "press A to advance" instead of delay(whatever).
+  String menuText = "Game over!\nFinal Leaderboard:";
   updateDisplay(menuText);
   delay(3000);
   String lead = getLeaderboard();
   updateDisplay(lead);
+  delay(3000);
+  menuText = "And the winner is....";
+  updateDisplay(menuText);
   delay(2000);
+  String winner = getWinner();
+  updateDisplay(winner + " wins!!\nCongrats!!");
+  delay(4000);
   menuText = "Play again?\nA. YES\nB. NO";
   updateDisplay(menuText);
   while (digitalRead(a_button) && digitalRead(b_button)) {
@@ -205,7 +224,9 @@ void endGame() {
   if (!digitalRead(b_button)) {
     menuText = "GAME OVER";
     updateDisplay(menuText);
-    while(true){delay(9000);} //delay forever
+    while(true){
+      delay(9000);
+    } //delay forever
   }
   //if they select the A button, the game will restart
 }
@@ -229,7 +250,8 @@ String getStatus() {
       playersAnswered = response.substring(response.indexOf("Round Status")+14,response.indexOf("Round Status")+15);
       totalPlayers = response.substring(response.indexOf("Round Status")+16,response.indexOf("Round Status")+17);
       response = response.substring(response.indexOf("<R>")+3,response.indexOf("</R>"));
-    } else {
+    } 
+    else {
       Serial.println("No timely response");
     }
   }
@@ -255,7 +277,36 @@ String getQuestion() {
       Serial.print("Got response at t=");
       Serial.println(millis());
       Serial.println(response);
-    } else {
+    } 
+    else {
+      Serial.println("No timely response");
+    }
+  }
+  else{
+    Serial.println("either wifi is disconnected or wifi is busy");
+  }
+  return response;
+}
+
+String getWinner() {
+  //gets the current winner from sb3.py.
+  String response = "";
+  if (wifi.isConnected() && !wifi.isBusy()) {
+    Serial.print("Getting winner at t=");
+    Serial.println(millis());
+    String getPath = "/student_code/" + kerberos + "/dev1/sb3.py";
+    String getParams = "sender=" + kerberos + "&deviceType=teensy";
+    wifi.sendRequest(GET, domain, port, getPath, getParams);
+    unsigned long t = millis();
+    while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
+    if (wifi.hasResponse()) {
+      response = wifi.getResponse();
+      Serial.print("Got response at t=");
+      Serial.println(millis());
+      Serial.println(response);
+      response = response.substring(response.indexOf("<w>")+3,response.indexOf("</w>"));
+    } 
+    else {
       Serial.println("No timely response");
     }
   }
@@ -282,7 +333,8 @@ String getLeaderboard() {
       Serial.println(millis());
       Serial.println(response);
       response = response.substring(response.indexOf("<html>")+6,response.indexOf("</html>"));
-    } else {
+    } 
+    else {
       Serial.println("No timely response");
     }
   }
@@ -300,12 +352,12 @@ void postData(String questionID, int gameID, int roundNum, float deltaT, int cor
     String postPath = "/student_code/" + kerberos + "/dev1/sb3.py";
     //TODO: complete these get params
     String postParams = "sender=" + kerberos +
-                        "&questionID=" + questionID +
-                        "&deviceType=teensy&gameID=" + String(gameID) +
-                        "&roundNum=" + String(roundNum) +
-                        "&delta=" + String(deltaT, 3) +
-                        "&isCorrect=" + correct;  //deltaT is set to 3 decimal places
-                        // does not include currentScore
+      "&questionID=" + questionID +
+      "&deviceType=teensy&gameID=" + String(gameID) +
+      "&roundNum=" + String(roundNum) +
+      "&delta=" + String(deltaT, 3) +
+      "&isCorrect=" + correct;  //deltaT is set to 3 decimal places
+    // does not include currentScore
     wifi.sendRequest(POST, domain, port, postPath, postParams);
     String junk = wifi.getResponse();
     Serial.println("This data was posted yay");
@@ -321,21 +373,21 @@ int parseResponse(String response) {
   //should this be two different methods?
   /*
     resp format:
-    <html><h1>008. What was the name of Cheerios when it was first marketed 50 years ago?</h1><ul>
-    <li><a>Cheerioats</a></li>
-    <li><b>Cheer Oats</b></li>
-    <li><c>Cheerie's</c></li>
-    <li><d>Cheerio-Loops</d></li>
-    </ul><h4>Cheerioats</h4>
-    </body></html>
-  */
+   <html><h1>008. What was the name of Cheerios when it was first marketed 50 years ago?</h1><ul>
+   <li><a>Cheerioats</a></li>
+   <li><b>Cheer Oats</b></li>
+   <li><c>Cheerie's</c></li>
+   <li><d>Cheerio-Loops</d></li>
+   </ul><h4>Cheerioats</h4>
+   </body></html>
+   */
   String question = "";
   String ans_a = "";
   String ans_b = "";
   String ans_c = "";
   String ans_d = "";
   String correct_ans = "";
-  
+
   id = response.substring(response.indexOf("<h1>") + 4, response.indexOf("<h1>") + 7).toInt();
   question = response.substring(response.indexOf("<h1>") + 9, response.indexOf("</h1>"));
   ans_a = response.substring(response.indexOf("<A>") + 3, response.indexOf("</A>"));
@@ -345,14 +397,15 @@ int parseResponse(String response) {
   correct_ans = response.substring(response.indexOf("<h4>") + 4, response.indexOf("</h4>"));
 
   //since all answers aren't shuffled, I will shuffle them now
-  String shuffledAnswers[4] = {ans_a,ans_b,ans_c,ans_d};
+  String shuffledAnswers[4] = {
+    ans_a,ans_b,ans_c,ans_d  };
   for (int a=0; a<4; a+= 1)
   {
     String tempString;
-     int r = int(random(a,3)); // dont remember syntax just now, random from a to 8 included.
-     tempString = shuffledAnswers[a];
-     shuffledAnswers[a] = shuffledAnswers[r];
-     shuffledAnswers[r] = tempString;
+    int r = int(random(a,3)); // dont remember syntax just now, random from a to 8 included.
+    tempString = shuffledAnswers[a];
+    shuffledAnswers[a] = shuffledAnswers[r];
+    shuffledAnswers[r] = tempString;
   }
   ans_a = shuffledAnswers[0];
   ans_b = shuffledAnswers[1];
@@ -372,3 +425,4 @@ int parseResponse(String response) {
   resp += "A. " + ans_a + "\nB. " + ans_b + "\nC. " + ans_c + "\nD. " + ans_d;
   return ans_pin;
 }
+
