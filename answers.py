@@ -25,7 +25,7 @@ def insertIntoDB(gameID,roundNum,questionID,sender,deviceType,delta,isCorrect):
     cnx.commit()
     #create a mySQL query and commit to database relevant information for logging message
 def updateScore(currentWinner):
-    query = ("SELECT currentScore FROM response_db WHERE sender=\'"+str(currentWinner)+"\' AND delta != 0")
+    query = ("SELECT currentScore FROM response_db WHERE sender=\'"+str(currentWinner)+"\' AND delta != 0 AND roundNum != 0")
     cnx.query(query)
     result = cnx.store_result()
     rows = result.fetch_row(maxrows=0,how=0) #what does this do?
