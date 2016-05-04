@@ -24,7 +24,32 @@ def insertIntoDB(gameID,roundNum,questionID,sender,deviceType,delta,isCorrect):
     cnx.query(query)
     cnx.commit()
     #create a mySQL query and commit to database relevant information for logging message
- 
+def updateScore(currentWinner):
+    query = ("SELECT currentScore FROM response_db WHERE sender=\'"+str(currentWinner)+"\' AND delta != 0")
+    cnx.query(query)
+    result = cnx.store_result()
+    rows = result.fetch_row(maxrows=0,how=0) #what does this do?
+    cnx.commit()
+    print(rows)
+    if(len(rows) > 0 and rows[0][0] is None):
+        newScore = 0
+    elif(len(rows) > 0):
+        newScore = int(rows[0][0])
+    if(len(rows) > 0):
+        newScore = newScore + 10 #score points for winning
+        query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
+        cnx.query(query)
+        cnx.commit()
+        query = ("SELECT sender FROM response_db")
+        cnx.query(query)
+        result = cnx.store_result()
+        rows = result.fetch_row(maxrows=0,how=0)
+        print(rows)
+        for i in range(len(rows)):
+            sender = (rows[i][0]).decode("utf-8")
+            query = ("UPDATE response_db SET delta=0 WHERE sender=\'"+str(sender)+"\'")
+            cnx.query(query)
+            cnx.commit()
 if method_type == 'POST':
     gameID = form.getvalue("gameID")
     roundNum = form.getvalue("roundNum")
@@ -51,7 +76,7 @@ if method_type == 'POST':
 
 elif method_type == 'GET':
     # Now pull data from database and compute on it
-    query = ("SELECT * FROM response_db WHERE isCorrect=1 ORDER BY delta") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
+    query = ("SELECT * FROM response_db WHERE isCorrect=1 ORDER BY delta ASC") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
     cnx.query(query)
     result = cnx.store_result()
     rows = result.fetch_row(maxrows=0,how=0) #what does this do?
@@ -66,7 +91,7 @@ elif method_type == 'GET':
                 currentWinner = rows[i][4].decode("utf-8")
             if(int(rows[i][2]) > currentRound):
                 currentRound = int(rows[i][2])#set to the highest round value
-        query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
+        query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta ASC") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
         cnx.query(query)
         result = cnx.store_result()
         rows = result.fetch_row(maxrows=0,how=0) #what does this do?
@@ -83,20 +108,7 @@ elif method_type == 'GET':
         rows = result.fetch_row(maxrows=0,how=0) #what does this do?
         cnx.commit()
         if(len(rows) == totalPlayers):
-            query = ("SELECT currentScore FROM response_db WHERE sender=\'"+str(currentWinner)+"\'")
-            cnx.query(query)
-            result = cnx.store_result()
-            rows = result.fetch_row(maxrows=0,how=0) #what does this do?
-            cnx.commit()
-            if(len(rows) > 0 and rows[0][0] is None):
-                newScore = 0
-            elif(len(rows) > 0):
-                newScore = int(rows[0][0])
-            if(len(rows) > 0):
-                newScore = newScore + 10 #score points for winning
-                query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
-                cnx.query(query)
-                cnx.commit()
+            updateScore(currentWinner);
         print("<w>" + currentWinner + "</w>")
 
     else:
@@ -113,7 +125,7 @@ elif method_type == 'GET':
                 currentRound = int(rows[i][2])#set to the highest round value
             print(rows[i][4].decode("utf-8") + " answered question " + str(rows[i][2]) + " and their response time was " + str(rows[i][6]) + " and their current score is " + str(rows[i][8]))
             print("</p>")
-        query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
+        query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta ASC") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
         cnx.query(query)
         result = cnx.store_result()
         rows = result.fetch_row(maxrows=0,how=0) #what does this do?
@@ -137,20 +149,7 @@ elif method_type == 'GET':
         print("<p>Round Status: " + str(len(rows)) + "/" + str(totalPlayers) + " have answered Round #" + str(currentRound))
         if(len(rows) == totalPlayers):
             print("<R>Y</R><W>" + currentWinner + "</W>")#finished turn if this is true
-            query = ("SELECT currentScore FROM response_db WHERE sender=\'"+str(currentWinner)+"\'")
-            cnx.query(query)
-            result = cnx.store_result()
-            rows = result.fetch_row(maxrows=0,how=0) #what does this do?
-            cnx.commit()
-            if(len(rows) > 0 and rows[0][0] is None):
-                newScore = 0
-            elif(len(rows) > 0):
-                newScore = int(rows[0][0])
-            if(len(rows) > 0):
-                newScore = newScore + 10 #score points for winning
-                query = ("UPDATE response_db SET currentScore="+str(newScore)+" WHERE sender=\'"+str(currentWinner)+"\'")
-                cnx.query(query)
-                cnx.commit()
+            updateScore(currentWinner);
         else:
             print("<R>N</R>")
         print("</p><p>Total Players : " + str(totalPlayers) + "</p>")
@@ -159,3 +158,4 @@ elif method_type == 'GET':
 
 cnx.close()#close so we don't go over max connections
 print('</html>')
+
