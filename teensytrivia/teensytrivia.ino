@@ -2,11 +2,9 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <math.h>
-#include <SparkFunLSM9DS1.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <ESP8266.h>
-
 
 Adafruit_SSD1306 display(4);
 
@@ -144,22 +142,22 @@ void updateDisplay(String text) {
 }
 
 void menu() {
-  String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\nA. New Game\nB. Join Game\nC. Leaderboard";
+  String menuText = "Teensy Trivia\n6.S08 Final Project\nJenny Xu and Claire Nord\n[A] Play\n[B] Leaderboard";
   updateDisplay(menuText);
-  while (digitalRead(a_button) && digitalRead(b_button) && digitalRead(c_button)) {
-    //delay until you press A, B, or C
+  while (digitalRead(a_button) && digitalRead(b_button)) {
+    //delay until you press A or B
     delay(50);
   }
   //stop game until this loop completes -> starts the loop function
   if (!digitalRead(a_button)) {
     Serial.println("pressed a");
     gameID = random(1, 999);
-    String disp = "Creating game #" + String(gameID) + "...\nTell other players to select [Join game]!\nPRESS A TO BEGIN GAME\npress B to cancel";
+    String disp = "Joining game...Others can join at this time...\n[A] Ready to start\n[B] Return to main menu";
     updateDisplay(disp);
     roundNum = 0;//start game off at 0 round
     delta = 0;//nonexistent delta
     isCorrect = 0;//no score yet
-    id = 1;//PLACEHOLDER VALUE
+    id = 1;//PLACEHOLDER VALUE (cocoa puff question)
     postData(id, gameID, roundNum, delta, isCorrect);
 
     delay(1000);
@@ -171,15 +169,10 @@ void menu() {
     } //wait until they press A or B
     Serial.println("START GAME");
   }
-  if (!digitalRead(c_button)) {
+  if (!digitalRead(b_button)) {
     String lead = getLeaderboard();
     lead = lead.substring(0,lead.indexOf("<b>"));
     updateDisplay(lead);
-    delay(2000);
-    menu();
-  }
-  if (!digitalRead(b_button)) {
-    updateDisplay("Waiting for leader...\nJK, feature yet to be implemented!\nSorry!");
     delay(2000);
     menu();
   }
