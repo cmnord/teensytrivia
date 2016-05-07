@@ -64,19 +64,20 @@ if method_type == "GET":
             print('<h1>LEADERBOARD</h1>')
             print('<h2>Your current leaders are:</h2>')
             playersCount = 0
+            alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             for i in range(len(rows)):
+                print('<p>')
                 if rows[i][8] != None:
                     playersCount = playersCount + 1
-                    print('<p>'+ str(playersCount) + "." + rows[i][4].decode("utf-8") + " : " + str(rows[i][8]))
-                    print('</p>')
+                    print("%i. <%s>%s</%s>: %s" %(playersCount, alph[i], rows[i][4].decode("utf-8"), alph[i], rows[i][8]))
                 else :
                     playersCount = playersCount + 1
-                    print('<p>'+ str(playersCount) + "." + rows[i][4].decode("utf-8") + " :0")
-                    print('</p>')
+                    print("%i. <%s>%s</%s>: 0" %(playersCount, alph[i], rows[i][4].decode("utf-8"), alph[i]))
+                print('</p>')
                     
+            print("<h3>Total players: " + str(playersCount) + "</h3>")
             print('</body>')
-        #TODO: for some reason some people are duplicated in the leaderboard
-        
+
 #this has to be included!
 print('</html>')
 

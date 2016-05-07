@@ -30,7 +30,7 @@ bool isCorrect = 0;
 //int currentScore = 0; //+10 for every correct answer
 int roundNum = 0; //this gets incremented every loop
 int gameID = 0; //this gets changed later
-int MAX_ROUNDS = 1; //game ends after MAX_ROUNDS questions
+int MAX_ROUNDS = 5; //game ends after MAX_ROUNDS questions
 
 String totalPlayers = "";
 String playersAnswered = "";
@@ -150,7 +150,6 @@ void menu() {
   }
   //stop game until this loop completes -> starts the loop function
   if (!digitalRead(a_button)) {
-    Serial.println("pressed a");
     gameID = random(1, 999);
     String disp = "Joining game...Others can join at this time...\n[A] Ready to start\n[B] Return to main menu";
     updateDisplay(disp);
@@ -159,15 +158,23 @@ void menu() {
     isCorrect = 0;//no score yet
     id = 1;//PLACEHOLDER VALUE (cocoa puff question)
     postData(id, gameID, roundNum, delta, isCorrect);
-
-    delay(1000);
-    while (digitalRead(a_button) && digitalRead(b_button)) {
-      if (!digitalRead(b_button)) {
-        menu();
+    delay(50);
+    while (digitalRead(a_button) && digitalRead(b_button)) { //wait until they press A or B
+      if (!digitalRead(a_button)) {
+        delay(50);
+        String players = getPlayers();
+        updateDisplay("Here are the \ncompetitors: " + players + "\n[A] Continue");
+        while(digitalRead(a_button)){delay(50);}
+        updateDisplay("3....2....1... GO!!"); //TODO: add cute sounds
+        delay(2000);
+        break;
       }
-      delay(50);
-    } //wait until they press A or B
-    Serial.println("START GAME");
+      if (!digitalRead(b_button)) {
+        delay(50);
+        menu();
+        break;
+      }
+    }
   }
   if (!digitalRead(b_button)) {
     String lead = getLeaderboard();
@@ -180,7 +187,7 @@ void menu() {
 }
 
 void endGame() {
-  //shows some stats at the end of the game.  Consider changing these to "press A to advance" instead of delay(whatever).
+  //shows some stats at the end of the game.
   String menuText = "Game over!\nGetting final leaderboard...\n(press A to advance)";
   updateDisplay(menuText);
   while(digitalRead(a_button)){delay(50);}
@@ -272,6 +279,49 @@ String getQuestion() {
     Serial.println("either wifi is disconnected or wifi is busy");
   }
   return response;
+}
+
+String getPlayers() {
+  //gets the players of the game from sb2.py.
+  //return format: "jennycxu cnord cnordy jennytest "
+  String response = "";
+  String players = "";
+  if (wifi.isConnected() && !wifi.isBusy()) {
+    Serial.print("Getting players at t=");
+    Serial.println(millis());
+    String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
+    String getParams = "sender=" + kerberos; //does NOT include deviceType so that we get <tags></tags>
+    wifi.sendRequest(GET, domain, port, getPath, getParams);
+    unsigned long t = millis();
+    while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
+    if (wifi.hasResponse()) {
+      response = wifi.getResponse();
+      Serial.print("Got response at t=");
+      Serial.println(millis());
+      Serial.println(response);
+      int numPlayers = (response.substring(response.indexOf("Total players: ") + 15, response.indexOf("</h3>"))).toInt();
+      String alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      Serial.println("parsing????????????????????????????????????");
+      for(int j=0; j<numPlayers; j++){
+        String st = "<" + String(alph[j]) + ">";
+        Serial.print("start = ");
+        Serial.println(st);
+        String nd = "</" + String(alph[j]) + ">";
+        Serial.print("end = ");
+        Serial.println(nd);
+        String player = response.substring(response.indexOf(st) + 3,response.indexOf(nd));
+        Serial.println(player);
+        players += player + " ";
+      }
+    }
+    else {
+      Serial.println("No timely response");
+    }
+  }
+  else {
+    Serial.println("either wifi is disconnected or wifi is busy");
+  }
+  return players;
 }
 
 String getWinner() {
