@@ -1,3 +1,7 @@
+#6.S08 FINAL PROJECT
+#Leaderboard.py
+#GET returns the current leaderboard, formatted by teensey, also can delete and clear the current leaderboard
+
 import _mysql
 import cgi
 
@@ -27,6 +31,7 @@ if method_type == "GET":
         except:
            # Rollback in case there is any error
            cnx.rollback()
+        #display the leaderboard by ordering all players
         query = ("SELECT * FROM response_db ORDER BY currentScore") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
         cnx.query(query)
         result = cnx.store_result()
@@ -34,11 +39,12 @@ if method_type == "GET":
         print(rows)
         
     else:
+        #print leaderboard so that teensey can pull information to display
         query = ("SELECT * FROM response_db ORDER BY currentScore DESC") #should return senders with 5 highest scores (bug: there will be duplicates from the same game...)
         cnx.query(query)
         result = cnx.store_result()
         rows = result.fetch_row(maxrows=0,how=0) #what does this do?
-        
+        #If on teensey, display the players and the winners
         if(form.getvalue('deviceType') == 'teensy' or form.getvalue('deviceType') == 'teensey'):
             print('LEADERBOARD\n')
             playersCount = 0
@@ -56,6 +62,7 @@ if method_type == "GET":
                     print(str(playersCount) + "." + rows[i][4].decode("utf-8") + " : 0\n")
             print("<b>Current winner is <w>"+currentWinner+"</w> with a score of <s>"+str(winnerScore)+"</s>")
         else:
+            #If on web, display the players and the winners with more headers and formatting
             print('<head>')
             print('<title>Posts Trivia Responses to Database</title>')
             print('</head>')
@@ -64,20 +71,17 @@ if method_type == "GET":
             print('<h1>LEADERBOARD</h1>')
             print('<h2>Your current leaders are:</h2>')
             playersCount = 0
-            alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             for i in range(len(rows)):
-                print('<p>')
                 if rows[i][8] != None:
                     playersCount = playersCount + 1
-                    print("%i. <%s>%s</%s>: %s" %(playersCount, alph[i], rows[i][4].decode("utf-8"), alph[i], rows[i][8]))
+                    print('<p>'+ str(playersCount) + "." + rows[i][4].decode("utf-8") + " : " + str(rows[i][8]))
+                    print('</p>')
                 else :
                     playersCount = playersCount + 1
-                    print("%i. <%s>%s</%s>: 0" %(playersCount, alph[i], rows[i][4].decode("utf-8"), alph[i]))
-                print('</p>')
+                    print('<p>'+ str(playersCount) + "." + rows[i][4].decode("utf-8") + " :0")
+                    print('</p>')
                     
-            print("<h3>Total players: " + str(playersCount) + "</h3>")
-            print('</body>')
-
+            print('</body>') 
 #this has to be included!
 print('</html>')
 
