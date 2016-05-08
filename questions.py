@@ -52,13 +52,10 @@ if method_type == 'GET':
         rows = result.fetch_row(maxrows=0,how=0)
         #Figure out if there is a question already generated and get that index, if not create a new one
         if(len(rows) > 0 and float(rows[0][6]) != -1):
-           p = randint(0,(len(json_data["questions"]) - 1)) #random question index number
-           updateQuestionID(p) 
-           print("New question generated for Round is:" + str(p))
+            p = randint(0,(len(json_data["questions"]) - 1)) #random question index number
+            updateQuestionID(p) 
         elif len(rows) > 0:
-            print(float(rows[0][6]));
             p = int(rows[0][3])#set to the value in the db that is the questionID
-            print("Already have a question for Round:" + str(p))
         else:
             p = randint(0,(len(json_data["questions"]) - 1)) #random question index number
             
