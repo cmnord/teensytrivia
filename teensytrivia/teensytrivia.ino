@@ -167,6 +167,7 @@ void menu() {
         while(digitalRead(a_button)){delay(50);}
         updateDisplay("3....2....1... GO!!"); //TODO: add cute sounds
         delay(2000);
+        resetLeaderboard();
         break;
       }
       if (!digitalRead(b_button)) {
@@ -351,7 +352,33 @@ String getWinner() {
   }
   return response;
 }
-
+String resetLeaderboard() {
+  //gets the leaderboard from sb2.py.
+  String response = "";
+  if (wifi.isConnected() && !wifi.isBusy()) {
+    Serial.print("Getting leaderboard at t=");
+    Serial.println(millis());
+    String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
+    String getParams = "sender=" + kerberos + "&deviceType=teensy&shouldDelete=True";
+    wifi.sendRequest(GET, domain, port, getPath, getParams);
+    unsigned long t = millis();
+    while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
+    if (wifi.hasResponse()) {
+      response = wifi.getResponse();
+      Serial.print("Got response at t=");
+      Serial.println(millis());
+      Serial.println(response);
+      response = response.substring(response.indexOf("<html>") + 6, response.indexOf("</html>"));
+    }
+    else {
+      Serial.println("No timely response");
+    }
+  }
+  else {
+    Serial.println("either wifi is disconnected or wifi is busy");
+  }
+  return response;
+}
 String getLeaderboard() {
   //gets the leaderboard from sb2.py.
   String response = "";
