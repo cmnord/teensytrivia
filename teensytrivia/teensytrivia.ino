@@ -141,7 +141,6 @@ void menu() {
   }
   if (!digitalRead(a_button)) { //person selected A
     delay(50);                  //prevent switch debouncing
-    resetLeaderboard();         //DB is now empty
     gameID = random(1, 999);    //create a game ID
     String disp = "Joining game...Others can join at this time...\n[A] Ready to start\n[B] Return to main menu";
     updateDisplay(disp);
@@ -204,12 +203,14 @@ void endGame() {
   }
   if (!digitalRead(a_button)) {                               //pressed A
     delay(50);                                                //prevent switch debouncing
+    resetLeaderboard();                                       //DB is now empty
     menu();                                                   //go back to menu
   }
   if (!digitalRead(b_button)) {                               //pressed B
     delay(50);                                                //prevent switch debouncing
     menuText = "GAME OVER";
     updateDisplay(menuText);
+    resetLeaderboard();                                       //DB is now empty
     while (true) {
       delay(9000);
     } //basically delay forever
