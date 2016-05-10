@@ -97,7 +97,7 @@ elif method_type == 'GET':
     #if on teensey, format it differently
     if(form.getvalue('deviceType') == 'teensy' or form.getvalue('deviceType') == 'teensey'):
         #the first one in this list has gone the fastest, and figure out who is winning and what round they're on
-        currentWinner,currentRound = findCurrentRoundStatus()
+        currentWinner,currentRound = findCurrentRoundStatus(rows)
 
         #calculate those who have gotten it wrong and order by who did it the fastest
         query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta ASC")
@@ -107,7 +107,7 @@ elif method_type == 'GET':
         cnx.commit()
         totalPlayers = totalPlayers + len(rows)#add up all the rest of the players
         #if no one got correct award fastest wrong one
-        currentWinner,currentRound = findCurrentRoundStatus()
+        currentWinner,currentRound = findCurrentRoundStatus(rows)
 
         #show the current entries in this round
         query = ("SELECT * FROM response_db WHERE roundNum=" + str(currentRound))
