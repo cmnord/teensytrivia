@@ -104,9 +104,18 @@ void loop() {
   isCorrect = 0;
   if (!digitalRead(correct_pin)) {
     isCorrect = 1;
+    tone(buzzerPin, 600, 250);           //happy buzzer tone
+    delay(100);
+    tone(buzzerPin, 600, 100);
+    delay(100);
+    tone(buzzerPin, 600, 100); 
+    tone(buzzerPin, 670, 700);
     updateDisplay("Correct answer!\nWaiting for others to finish...");
   }
   else {
+    tone(buzzerPin, 440, 250);           //sound the buzzer
+    delay(100);
+    tone(buzzerPin, 200, 900);
     updateDisplay("Sorry, wrong answer\n:(\nWaiting for others to finish...");
   }
   tQuestionEnd = millis();               //stop the timer and calculate delta
@@ -155,8 +164,15 @@ void menu() {
         String players = getPlayers();                       //get a string of all the current players
         updateDisplay("Here are the \ncompetitors: " + players + "\n[A] Continue");
         while(digitalRead(a_button)){delay(50);}
-        updateDisplay("3....2....1... GO!!");                //TODO: add cute sounds
-        delay(2000);                                         //show for 2 seconds
+        updateDisplay("3....2....1... GO!!");                //3...2...1...GO sound
+        tone(buzzerPin,440,200);
+        delay(1000);
+        tone(buzzerPin,440,200);
+        delay(1000);
+        tone(buzzerPin,440,200);
+        delay(1000);
+        tone(buzzerPin,880,1000);
+        delay(1000);
         break;                                               //exit the while loop
       }
       if (!digitalRead(b_button)) {                          //pressed B
@@ -252,7 +268,7 @@ String getStatus() {
 String getQuestion() {
   //gets a question from sb1.py.
   String response = "";
-  if (wifi.isConnected())
+  if (wifi.isConnected()){
     Serial.print("Getting question at t=");
     Serial.println(millis());
     String getPath = "/student_code/" + kerberos + "/dev1/sb1.py";
@@ -342,6 +358,7 @@ String getWinner() {
   }
   return response;
 }
+
 String resetLeaderboard() {
   //Clears the database using sb2.py.
   String response = "";
@@ -369,6 +386,7 @@ String resetLeaderboard() {
   }
   return response;
 }
+
 String getLeaderboard() {
   //gets the leaderboard from sb2.py.
   String response = "";
