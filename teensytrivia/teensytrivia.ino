@@ -35,7 +35,7 @@ String playersAnswered = "";
 #define PASSWORD ""
 
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
-bool debug = false; //if debug is TRUE, then Serial monitor is required to open
+bool debug = true; //if debug is TRUE, then Serial monitor is required to open
                     //if debug is FALSE, then Serial monitor is not required (can just use battery)
 
 //define buttons
@@ -405,7 +405,7 @@ String resetLeaderboard() {
       Serial.println(millis());
     }
     String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
-    String getParams = "sender=" + kerberos + "shouldDelete=True";
+    String getParams = "sender=" + kerberos + "&shouldDelete=T";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
     unsigned long t = millis();
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
