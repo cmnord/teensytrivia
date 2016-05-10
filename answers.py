@@ -61,16 +61,6 @@ def flagForNextRound():
         query = ("UPDATE response_db SET delta=0 WHERE sender=\'"+str(sender)+"\'")
         cnx.query(query)
         cnx.commit()
-#find who is currently winning in the specified category
-def findCurrentRoundStatus(rows):
-    currentRound = 0
-    currentWinner = ""
-    for i in range(len(rows)):
-        if i == 0:
-            currentWinner = rows[i][4].decode("utf-8")
-        if(int(rows[i][2]) > currentRound):
-            currentRound = int(rows[i][2])
-    return currentWinner,currentRound
 #if posting something to the database, then send the corresponding values
 if method_type == 'POST':
     gameID = form.getvalue("gameID")
@@ -86,6 +76,8 @@ if method_type == 'POST':
 #if getting from this file then show the current entries into the database ordered by if correct
 elif method_type == 'GET':
     #select the players who got it correct and show the winners highest up
+    #find who is currently winning in the specified category
+
     query = ("SELECT * FROM response_db WHERE isCorrect=1 ORDER BY delta ASC") 
     cnx.query(query)
     result = cnx.store_result()
@@ -95,12 +87,16 @@ elif method_type == 'GET':
     currentWinner = ""
     #calculate the number of players in the game
     totalPlayers = len(rows)
-
+    
     #if on teensey, format it differently
     if(form.getvalue('deviceType') == 'teensy' or form.getvalue('deviceType') == 'teensey'):
         #the first one in this list has gone the fastest, and figure out who is winning and what round they're on
-        currentWinner,currentRound = findCurrentRoundStatus(rows)
-
+        for i in range(len(rows)):
+            if i == 0:#the first one in this list has gone the fastest
+                currentWinner = rows[i][4].decode("utf-8")
+            if(int(rows[i][2]) > currentRound):
+                currentRound = int(rows[i][2])#set to the highest round value
+        
         #calculate those who have gotten it wrong and order by who did it the fastest
         query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta ASC")
         cnx.query(query)
@@ -109,7 +105,11 @@ elif method_type == 'GET':
         cnx.commit()
         totalPlayers = totalPlayers + len(rows)#add up all the rest of the players
         #if no one got correct award fastest wrong one
-        currentWinner,currentRound = findCurrentRoundStatus(rows)
+        for i in range(len(rows)):
+            if( i == 0 and len(currentWinner) == 0):#if no one got correct award fastest wrong one
+                currentWinner = rows[i][4].decode("utf-8")
+            if(int(rows[i][2]) > currentRound):
+                currentRound = int(rows[i][2])#set to the highest round value
 
         #show the current entries in this round
         query = ("SELECT * FROM response_db WHERE roundNum=" + str(currentRound))
