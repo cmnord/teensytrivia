@@ -23,7 +23,7 @@ method_type = get_method_type()
 form = cgi.FieldStorage() #get specified parameters!
 
 #open the external JSON with the questions for reading
-r = urllib.request.urlopen('https://api.myjson.com/bins/46ciq')
+r = urllib.request.urlopen('https://api.myjson.com/bins/2hlii')
 html = r.read().decode('utf8') 
 json_data = json.loads(html)
 

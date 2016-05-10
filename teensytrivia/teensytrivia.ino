@@ -88,6 +88,7 @@ void setup() {
   display.setCursor(0, 0);
   randomSeed(analogRead(0));//seed random number
   display.setTextSize(2);
+  resetLeaderboard();       //DB is now empty
   menu();
 }
 
@@ -240,7 +241,6 @@ void endGame() {
   }
   if (!digitalRead(a_button)) {                               //pressed A
     delay(50);                                                //prevent switch debouncing
-    resetLeaderboard();                                       //DB is now empty
     menu();                                                   //go back to menu
   }
   if (!digitalRead(b_button)) {                               //pressed B
