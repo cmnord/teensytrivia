@@ -63,6 +63,8 @@ def flagForNextRound():
         cnx.commit()
 #find who is currently winning in the specified category
 def findCurrentRoundStatus(rows):
+    currentRound = 0
+    currentWinner = ""
     for i in range(len(rows)):
         if i == 0:
             currentWinner = rows[i][4].decode("utf-8")
