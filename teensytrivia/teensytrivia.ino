@@ -8,10 +8,10 @@
 Adafruit_SSD1306 display(4);
 
 #define wifiSerial Serial1          // for ESP chip
-#define buzzerPin 10
+#define buzzerPin 3
 
 //wifi/internet globals
-String kerberos = "cnord";      //update with player's kerb/username
+String kerberos = "jennycxu";      //update with player's kerb/username
 String MAC = "";
 String resp = "";
 uint32_t tLastIotReq = 0;       //time of last send/pull
@@ -39,10 +39,10 @@ bool debug = true; //if debug is TRUE, then Serial monitor is required to open
                     //if debug is FALSE, then Serial monitor is not required (can just use battery)
 
 //define buttons
-int a_button = 4; //black
-int b_button = 2; //black
-int c_button = 8; //yellow
-int d_button = 6; //blue
+int a_button = 10; //black
+int b_button = 11; //black
+int c_button = 12; //yellow
+int d_button = 9; //blue
 
 void setup() {
   if (debug) {
@@ -242,6 +242,7 @@ void endGame() {
   }
   if (!digitalRead(a_button)) {                               //pressed A
     delay(50);                                                //prevent switch debouncing
+    resetLeaderboard(); 
     menu();                                                   //go back to menu
   }
   if (!digitalRead(b_button)) {                               //pressed B
