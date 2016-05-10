@@ -171,6 +171,7 @@ void menu() {
     id = 1;                    //placeholder value
     postData(id, gameID, roundNum, delta, isCorrect);        //post these placeholder values to db so we know this person wants to play
     while (digitalRead(a_button) && digitalRead(b_button)) { //wait until they press A or B
+      delay(50);
       if (!digitalRead(a_button)) {
         delay(50);                                           //prevent switch debouncing
         String players = getPlayers();                       //get a string of all the current players
