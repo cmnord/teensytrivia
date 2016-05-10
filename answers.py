@@ -90,38 +90,36 @@ elif method_type == 'GET':
     
     #if on teensey, format it differently
     if(form.getvalue('deviceType') == 'teensy' or form.getvalue('deviceType') == 'teensey'):
-        #the first one in this list has gone the fastest, and figure out who is winning and what round they're on
+        #if on teensy print just the winner
+        #show who got it right
         for i in range(len(rows)):
-            if i == 0:#the first one in this list has gone the fastest
+            if i == 0:
                 currentWinner = rows[i][4].decode("utf-8")
             if(int(rows[i][2]) > currentRound):
-                currentRound = int(rows[i][2])#set to the highest round value
-        
-        #calculate those who have gotten it wrong and order by who did it the fastest
+                currentRound = int(rows[i][2])
+        #show who got it wrong
         query = ("SELECT * FROM response_db WHERE isCorrect=0 ORDER BY delta ASC")
         cnx.query(query)
         result = cnx.store_result()
-        rows = result.fetch_row(maxrows=0,how=0)
+        rows = result.fetch_row(maxrows=0,how=0) 
         cnx.commit()
-        totalPlayers = totalPlayers + len(rows)#add up all the rest of the players
-        #if no one got correct award fastest wrong one
+        totalPlayers = totalPlayers + len(rows)
         for i in range(len(rows)):
-            if( i == 0 and len(currentWinner) == 0):#if no one got correct award fastest wrong one
+            if( i == 0 and len(currentWinner) == 0):
                 currentWinner = rows[i][4].decode("utf-8")
+                print(currentWinner)
             if(int(rows[i][2]) > currentRound):
-                currentRound = int(rows[i][2])#set to the highest round value
-
-        #show the current entries in this round
+                currentRound = int(rows[i][2])
+        #Figure out if the round is over by checking how many people have answered this round
         query = ("SELECT * FROM response_db WHERE roundNum=" + str(currentRound))
         cnx.query(query)
         result = cnx.store_result()
-        rows = result.fetch_row(maxrows=0,how=0) #what does this do?
+        rows = result.fetch_row(maxrows=0,how=0) 
         cnx.commit()
-
-        #if everyone has answered, show the winner
+        #finished turn if this all players have answered the current Question and print the winner
         if(len(rows) == totalPlayers):
+            print("<w>" + currentWinner + "</w>")
             updateScore(currentWinner);
-        print("<w>" + currentWinner + "</w>")
 
     else:
         #if on web, do the same thing as teensey but print out more lines for easy readability
