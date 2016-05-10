@@ -1,4 +1,3 @@
-#include <Adafruit_ST7735.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <math.h>
@@ -36,6 +35,8 @@ String playersAnswered = "";
 #define PASSWORD ""
 
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
+bool debug = false; //if debug is TRUE, then Serial monitor is required to open
+                    //if debug is FALSE, then Serial monitor is not required (can just use battery)
 
 //define buttons
 int a_button = 4; //black
@@ -44,7 +45,9 @@ int c_button = 8; //yellow
 int d_button = 6; //blue
 
 void setup() {
-  Serial.begin(115200);
+  if (debug) {
+    Serial.begin(115200);
+  }
   //button setup
   pinMode(a_button, INPUT);        //set pin to "listen" to signals
   pinMode(b_button, INPUT);
@@ -64,13 +67,19 @@ void setup() {
   display.setTextColor(WHITE);
 
   //wifi setup
-  Serial.println("TRYING");
+  if (debug) {
+    Serial.println("TRYING");
+  }
   wifi.begin();
-  Serial.print("WIFI CONNECTING.....");
+  if (debug) {
+    Serial.print("WIFI CONNECTING.....");
+  }
   wifi.connectWifi(SSID, PASSWORD);
   while (!wifi.isConnected()); //wait for connection
   MAC = wifi.getMAC();
-  Serial.println("CONNECTED");
+  if (debug) {
+    Serial.println("CONNECTED");
+  }
   //get extra message if there is one and clear it out
   if (wifi.hasResponse()) {
     resp = wifi.getResponse();
@@ -83,14 +92,16 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("-------------begin loop-----------------");
+  if (debug) {
+    Serial.println("-------------begin loop-----------------");
+  }
   wifi.clearRequest();
   if (roundNum == MAX_ROUNDS) {
     endGame(); //end the game if we've already played MAX_ROUNDS rounds
   }
   roundNum += 1;
   resp = getQuestion(); //get a question from our JSON file
-  if (resp.equals("")) {
+  if (resp.equals("") && debug == true) {
     Serial.println("Response is empty.  Wifi connection was probably lost?");
   }
 
@@ -108,12 +119,12 @@ void loop() {
     delay(100);
     tone(buzzerPin, 600, 100);
     delay(100);
-    tone(buzzerPin, 600, 100); 
+    tone(buzzerPin, 600, 100);
     tone(buzzerPin, 670, 700);
     updateDisplay("Correct answer!\nWaiting for others to finish...");
   }
   else {
-    tone(buzzerPin, 440, 250);           //sound the buzzer
+    tone(buzzerPin, 440, 250);           //sad buzzer tone
     delay(100);
     tone(buzzerPin, 200, 900);
     updateDisplay("Sorry, wrong answer\n:(\nWaiting for others to finish...");
@@ -133,7 +144,7 @@ void loop() {
 
 void updateDisplay(String text) {
   //just displays a string of text on the OLED.
-  Serial.println("DISPLAYING");
+  if(debug){Serial.println("DISPLAYING");}
   display.clearDisplay();
   display.setCursor(0, 0);
   display.setTextSize(1);
@@ -163,15 +174,17 @@ void menu() {
         delay(50);                                           //prevent switch debouncing
         String players = getPlayers();                       //get a string of all the current players
         updateDisplay("Here are the \ncompetitors: " + players + "\n[A] Continue");
-        while(digitalRead(a_button)){delay(50);}
+        while (digitalRead(a_button)) {
+          delay(50);
+        }
         updateDisplay("3....2....1... GO!!");                //3...2...1...GO sound
-        tone(buzzerPin,440,200);
+        tone(buzzerPin, 440, 200);
         delay(1000);
-        tone(buzzerPin,440,200);
+        tone(buzzerPin, 440, 200);
         delay(1000);
-        tone(buzzerPin,440,200);
+        tone(buzzerPin, 440, 200);
         delay(1000);
-        tone(buzzerPin,880,1000);
+        tone(buzzerPin, 880, 1000);
         delay(1000);
         break;                                               //exit the while loop
       }
@@ -184,7 +197,7 @@ void menu() {
   }
   if (!digitalRead(b_button)) {                              //pressed B
     String lead = getLeaderboard();
-    lead = lead.substring(0,lead.indexOf("<b>"));            //parse leaderboard
+    lead = lead.substring(0, lead.indexOf("<b>"));           //parse leaderboard
     updateDisplay(lead);                                     //display leaderboard for 2 seconds
     delay(2000);
     menu();
@@ -196,21 +209,29 @@ void endGame() {
   //shows some stats at the end of the game.
   String menuText = "Game over!\nGetting final leaderboard...\n(press A to advance)";
   updateDisplay(menuText);
-  while(digitalRead(a_button)){delay(50);}                    //show menuText until they press A
+  while (digitalRead(a_button)) {
+    delay(50); //show menuText until they press A
+  }
   delay(50);                                                  //prevent switch debouncing
   String lead = getLeaderboard();
-  String leaderboard = lead.substring(0,lead.indexOf("<b>")); //parse leaderboard
+  String leaderboard = lead.substring(0, lead.indexOf("<b>")); //parse leaderboard
   updateDisplay(leaderboard);                                 //show leaderboard until they press A
-  while(digitalRead(a_button)){delay(50);}
+  while (digitalRead(a_button)) {
+    delay(50);
+  }
   delay(50);                                                  //prevent switch debouncing
   menuText = "And the winner is....\n(Press A to advance)";
   updateDisplay(menuText);
-  while(digitalRead(a_button)){delay(50);}                    //show menuText until they press A
+  while (digitalRead(a_button)) {
+    delay(50); //show menuText until they press A
+  }
   delay(50);                                                  //prevent switch debouncing
-  String winner = lead.substring(lead.indexOf("<w>")+3,lead.indexOf("</w>"));    //parse out winner
-  String winScore = lead.substring(lead.indexOf("<s>")+3,lead.indexOf("</s>"));  //parse out score of winner
+  String winner = lead.substring(lead.indexOf("<w>") + 3, lead.indexOf("</w>")); //parse out winner
+  String winScore = lead.substring(lead.indexOf("<s>") + 3, lead.indexOf("</s>")); //parse out score of winner
   updateDisplay(winner + " wins with a score of " + winScore + "!!\nCongrats!!\n(Press A to advance)");
-  while(digitalRead(a_button)){delay(50);}                    //show winner score until they press A
+  while (digitalRead(a_button)) {
+    delay(50); //show winner score until they press A
+  }
   delay(50);                                                  //prevent switch debouncing
   menuText = "Play again?\nA. YES\nB. NO";
   updateDisplay(menuText);
@@ -238,8 +259,10 @@ String getStatus() {
   //checks sb3.py to see if the round is over
   String response = "";
   if (wifi.isConnected()) {
-    Serial.print("Getting status at t=");
-    Serial.println(millis());
+    if(debug){
+      Serial.print("Getting status at t=");
+      Serial.println(millis());
+    }
     String getPath = "/student_code/" + kerberos + "/dev1/sb3.py";
     String getParams = "";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
@@ -247,19 +270,21 @@ String getStatus() {
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
     if (wifi.hasResponse()) {
       response = wifi.getResponse();
-      Serial.print("Got response at t=");
-      Serial.println(millis());
-      Serial.println(response);
+      if(debug){
+        Serial.print("Got response at t=");
+        Serial.println(millis());
+        Serial.println(response);
+      }
       //populate playersAnswered and totalPlayers, then parse response
       playersAnswered = response.substring(response.indexOf("Round Status") + 14, response.indexOf("Round Status") + 15);
       totalPlayers = response.substring(response.indexOf("Round Status") + 16, response.indexOf("Round Status") + 17);
       response = response.substring(response.indexOf("<R>") + 3, response.indexOf("</R>"));
     }
-    else {
+    else if(debug) {
       Serial.println("No timely response");
     }
   }
-  else {
+  else if(debug){
     Serial.println("either wifi is disconnected or wifi is busy");
   }
   return response;
@@ -268,9 +293,11 @@ String getStatus() {
 String getQuestion() {
   //gets a question from sb1.py.
   String response = "";
-  if (wifi.isConnected()){
-    Serial.print("Getting question at t=");
-    Serial.println(millis());
+  if (wifi.isConnected()) {
+    if(debug){
+      Serial.print("Getting question at t=");
+      Serial.println(millis());
+    }
     String getPath = "/student_code/" + kerberos + "/dev1/sb1.py";
     String getParams = "sender=" + kerberos + "&deviceType=teensy";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
@@ -278,15 +305,17 @@ String getQuestion() {
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
     if (wifi.hasResponse()) {
       response = wifi.getResponse();
-      Serial.print("Got response at t=");
-      Serial.println(millis());
-      Serial.println(response);
+      if(debug){
+        Serial.print("Got response at t=");
+        Serial.println(millis());
+        Serial.println(response);
+      }
     }
-    else {
+    else if(debug) {
       Serial.println("No timely response");
     }
   }
-  else {
+  else if(debug){
     Serial.println("either wifi is disconnected or wifi is busy");
   }
   return response;
@@ -298,8 +327,10 @@ String getPlayers() {
   String response = "";
   String players = "";
   if (wifi.isConnected() && !wifi.isBusy()) {
-    Serial.print("Getting players at t=");
-    Serial.println(millis());
+    if(debug){
+      Serial.print("Getting players at t=");
+      Serial.println(millis());
+    }
     String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
     String getParams = "sender=" + kerberos; //does NOT include deviceType so that we get <tags></tags>
     wifi.sendRequest(GET, domain, port, getPath, getParams);
@@ -307,24 +338,26 @@ String getPlayers() {
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
     if (wifi.hasResponse()) {
       response = wifi.getResponse();
-      Serial.print("Got response at t=");
-      Serial.println(millis());
-      Serial.println(response);
+      if(debug){
+        Serial.print("Got response at t=");
+        Serial.println(millis());
+        Serial.println(response);
+      }
       //take players out of response one by one
       int numPlayers = (response.substring(response.indexOf("Total players: ") + 15, response.indexOf("</h3>"))).toInt();
       String alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      for(int j=0; j<numPlayers; j++){
+      for (int j = 0; j < numPlayers; j++) {
         String st = "<" + String(alph[j]) + ">";
         String nd = "</" + String(alph[j]) + ">";
-        String player = response.substring(response.indexOf(st) + 3,response.indexOf(nd));
+        String player = response.substring(response.indexOf(st) + 3, response.indexOf(nd));
         players += player + " ";
       }
     }
-    else {
+    else if(debug) {
       Serial.println("No timely response.");
     }
   }
-  else {
+  else if(debug){
     Serial.println("Either wifi is disconnected or wifi is busy.");
   }
   return players;
@@ -334,8 +367,10 @@ String getWinner() {
   //gets the current winner from sb3.py.
   String response = "";
   if (wifi.isConnected() && !wifi.isBusy()) {
-    Serial.print("Getting winner at t=");
-    Serial.println(millis());
+    if(debug){
+      Serial.print("Getting winner at t=");
+      Serial.println(millis());
+    }
     String getPath = "/student_code/" + kerberos + "/dev1/sb3.py";
     String getParams = "sender=" + kerberos + "&deviceType=teensy";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
@@ -343,17 +378,19 @@ String getWinner() {
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
     if (wifi.hasResponse()) {
       response = wifi.getResponse();
-      Serial.print("Got response at t=");
-      Serial.println(millis());
-      Serial.println(response);
+      if(debug){
+        Serial.print("Got response at t=");
+        Serial.println(millis());
+        Serial.println(response);
+      }
       //winner is bounded <w> </w> tags
       response = response.substring(response.indexOf("<w>") + 3, response.indexOf("</w>"));
     }
-    else {
+    else if(debug){
       Serial.println("No timely response.");
     }
   }
-  else {
+  else if(debug){
     Serial.println("either wifi is disconnected or wifi is busy.");
   }
   return response;
@@ -363,8 +400,10 @@ String resetLeaderboard() {
   //Clears the database using sb2.py.
   String response = "";
   if (wifi.isConnected() && !wifi.isBusy()) {
-    Serial.print("Getting leaderboard at t=");
-    Serial.println(millis());
+    if(debug){
+      Serial.print("Getting leaderboard at t=");
+      Serial.println(millis());
+    }
     String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
     String getParams = "sender=" + kerberos + "shouldDelete=True";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
@@ -372,16 +411,18 @@ String resetLeaderboard() {
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
     if (wifi.hasResponse()) {
       response = wifi.getResponse();
-      Serial.print("Got response at t=");
-      Serial.println(millis());
-      Serial.println(response);
+      if(debug){
+        Serial.print("Got response at t=");
+        Serial.println(millis());
+        Serial.println(response);
+      }
       response = response.substring(response.indexOf("<html>") + 6, response.indexOf("</html>"));
     }
-    else {
+    else if(debug) {
       Serial.println("No timely response.");
     }
   }
-  else {
+  else if(debug){
     Serial.println("either wifi is disconnected or wifi is busy.");
   }
   return response;
@@ -391,8 +432,10 @@ String getLeaderboard() {
   //gets the leaderboard from sb2.py.
   String response = "";
   if (wifi.isConnected() && !wifi.isBusy()) {
-    Serial.print("Getting leaderboard at t=");
-    Serial.println(millis());
+    if(debug){
+      Serial.print("Getting leaderboard at t=");
+      Serial.println(millis());
+    }
     String getPath = "/student_code/" + kerberos + "/dev1/sb2.py";
     String getParams = "sender=" + kerberos + "&deviceType=teensy";
     wifi.sendRequest(GET, domain, port, getPath, getParams);
@@ -400,16 +443,18 @@ String getLeaderboard() {
     while (!wifi.hasResponse() && millis() - t < 10000); //wait for response
     if (wifi.hasResponse()) {
       response = wifi.getResponse();
-      Serial.print("Got response at t=");
-      Serial.println(millis());
-      Serial.println(response);
+      if(debug){
+        Serial.print("Got response at t=");
+        Serial.println(millis());
+        Serial.println(response);
+      }
       response = response.substring(response.indexOf("<html>") + 6, response.indexOf("</html>"));
     }
-    else {
+    else if(debug){
       Serial.println("No timely response.");
     }
   }
-  else {
+  else if(debug) {
     Serial.println("either wifi is disconnected or wifi is busy.");
   }
   return response;
@@ -418,8 +463,10 @@ String getLeaderboard() {
 void postData(String questionID, int gameID, int roundNum, float deltaT, int correct) {
   //posts the user's answer, etc. to sb3.py.
   if (wifi.isConnected() && !wifi.isBusy()) {
-    Serial.print("Posting data at t=");
-    Serial.println(millis());
+    if(debug){
+      Serial.print("Posting data at t=");
+      Serial.println(millis());
+    }
     String postPath = "/student_code/" + kerberos + "/dev1/sb3.py";
     String postParams = "sender=" + kerberos +
                         "&questionID=" + questionID +
@@ -429,7 +476,7 @@ void postData(String questionID, int gameID, int roundNum, float deltaT, int cor
                         "&isCorrect=" + correct;  //deltaT is set to 3 decimal places
     wifi.sendRequest(POST, domain, port, postPath, postParams);
     String junk = wifi.getResponse();
-    Serial.println("This data has been posted!");
+    if(debug){ Serial.println("This data has been posted!");}
     isCorrect = -1;//if it has an answer needed to be pushed, push it and then restart
     unsigned long t = millis();
     while (wifi.isBusy() && millis() - t < 10000); //wait for response
