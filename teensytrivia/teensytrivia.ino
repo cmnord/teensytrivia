@@ -8,10 +8,10 @@
 Adafruit_SSD1306 display(4);
 
 #define wifiSerial Serial1          // for ESP chip
-#define buzzerPin 3
+#define buzzerPin 10
 
 //wifi/internet globals
-String kerberos = "jennycxu";      //update with player's kerb/username
+String kerberos = "cnord";      //update with player's kerb/username
 String MAC = "";
 String resp = "";
 uint32_t tLastIotReq = 0;       //time of last send/pull
@@ -35,14 +35,14 @@ String playersAnswered = "";
 #define PASSWORD ""
 
 ESP8266 wifi = ESP8266(true);  //Change to "true" or nothing for verbose serial output
-bool debug = true; //if debug is TRUE, then Serial monitor is required to open
+bool debug = false; //if debug is TRUE, then Serial monitor is required to open
                     //if debug is FALSE, then Serial monitor is not required (can just use battery)
 
 //define buttons
-int a_button = 10; //black
-int b_button = 11; //black
-int c_button = 12; //yellow
-int d_button = 9; //blue
+int a_button = 4; //black
+int b_button = 2; //black
+int c_button = 8; //yellow
+int d_button = 6; //blue
 
 void setup() {
   if (debug) {
@@ -386,7 +386,7 @@ String getWinner() {
         Serial.println(response);
       }
       //winner is bounded <w> </w> tags
-      response = response.substring(response.indexOf("<w>") + 3, response.indexOf("</w>"));
+      response = response.substring(response.indexOf("<W>") + 3, response.indexOf("</W>"));
     }
     else if(debug){
       Serial.println("No timely response.");
